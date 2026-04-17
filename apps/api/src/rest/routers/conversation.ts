@@ -117,12 +117,17 @@ import {
 	getConversationTimelineItemsRequestSchema,
 	getConversationTimelineItemsResponseSchema,
 	type TimelineItem,
+	type TimelineItemCreateInput,
 	timelineItemSchema,
 } from "@cossistant/types/api/timeline-item";
 import { conversationSchema } from "@cossistant/types/schemas";
 import { OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
+import {
+	ClientTimelineItemCreatedAtValidationError,
+	normalizeClientTimelineItemCreatedAt,
+} from "../client-timeline-item-created-at";
 import { protectedPublicApiKeyMiddleware } from "../middleware";
 import {
 	errorJsonResponse,
@@ -236,10 +241,21 @@ function canonicalizeForStableStringify(value: unknown): unknown {
 	return value;
 }
 
+type DefaultTimelineItemIdSource = {
+	type?: TimelineItemCreateInput["type"];
+	text: TimelineItemCreateInput["text"];
+	parts?: TimelineItemCreateInput["parts"];
+	visibility: TimelineItemCreateInput["visibility"];
+	userId?: string | null;
+	aiAgentId?: string | null;
+	visitorId?: string | null;
+	tool?: string | null;
+};
+
 function buildDefaultTimelineItemId(params: {
 	conversationId: string;
 	index: number;
-	item: TimelineItem;
+	item: DefaultTimelineItemIdSource;
 }): string {
 	const normalizedShape = {
 		type: params.item.type ?? "message",
@@ -614,7 +630,7 @@ conversationRouter.openapi(
 		path: "/",
 		summary: "Create a conversation (optionally with initial timeline items)",
 		description:
-			"Create a conversation; optionally pass a conversationId, public metadata, and a set of default timeline items.",
+			"Create a conversation; optionally pass a conversationId, public metadata, and a set of default timeline items. When a default item's createdAt is omitted, the server assigns the timestamp. Historical timestamps are allowed. Timestamps more than 5 minutes in the future are rejected.",
 		tags: ["Conversations"],
 		request: {
 			body: {
@@ -644,7 +660,9 @@ conversationRouter.openapi(
 					},
 				},
 			},
-			400: errorJsonResponse("Invalid request"),
+			400: errorJsonResponse(
+				"Invalid request or defaultTimelineItems createdAt more than 5 minutes in the future"
+			),
 			401: errorJsonResponse("Unauthorized - Invalid or missing API key"),
 			403: errorJsonResponse("Forbidden - Public key origin validation failed"),
 		},
@@ -653,6 +671,32 @@ conversationRouter.openapi(
 	async (c) => {
 		const { db, website, organization, body, visitorIdHeader } =
 			await safelyExtractRequestData(c, createConversationRequestSchema);
+
+		type NormalizedDefaultTimelineItemInput = Omit<
+			TimelineItemCreateInput,
+			"createdAt"
+		> & {
+			createdAt?: Date;
+		};
+
+		let normalizedDefaults: NormalizedDefaultTimelineItemInput[];
+		try {
+			normalizedDefaults = (body.defaultTimelineItems ?? []).map(
+				(item, index) => ({
+					...item,
+					createdAt: normalizeClientTimelineItemCreatedAt({
+						createdAt: item.createdAt,
+						field: `defaultTimelineItems[${index}].createdAt`,
+					}),
+				})
+			);
+		} catch (error) {
+			if (error instanceof ClientTimelineItemCreatedAtValidationError) {
+				return restError(c, 400, "BAD_REQUEST", error.message);
+			}
+
+			throw error;
+		}
 
 		const visitor = await getVisitor(db, {
 			visitorId: body.visitorId || visitorIdHeader,
@@ -703,8 +747,7 @@ conversationRouter.openapi(
 			planAllowsAutoTranslate: planInfo.features["auto-translate"] === true,
 			websiteAutoTranslateEnabled: website.autoTranslateEnabled,
 		});
-		const defaults = body.defaultTimelineItems ?? [];
-		const preparedDefaults = defaults.map((item, index) =>
+		const preparedDefaults = normalizedDefaults.map((item, index) =>
 			mapDefaultTimelineItemForCreation({
 				...item,
 				id:

@@ -36,8 +36,12 @@ import {
 	ConversationTimelineType,
 } from "@cossistant/types/enums";
 import { OpenAPIHono, z } from "@hono/zod-openapi";
+import {
+	ClientTimelineItemCreatedAtValidationError,
+	normalizeClientTimelineItemCreatedAt,
+} from "../client-timeline-item-created-at";
 import { protectedPublicApiKeyMiddleware } from "../middleware";
-import { errorJsonResponse, runtimeDualAuth } from "../openapi";
+import { errorJsonResponse, restError, runtimeDualAuth } from "../openapi";
 import type { RestContext } from "../types";
 
 export const messagesRouter = new OpenAPIHono<RestContext>();
@@ -82,9 +86,9 @@ messagesRouter.openapi(
 	{
 		method: "post",
 		path: "/",
-		summary: "Send a message (timeline item) to a conversation",
+		summary: "Send a timeline item to a conversation",
 		description:
-			"Send a new message (timeline item) to an existing conversation.",
+			"Send a new timeline item to an existing conversation. When item.createdAt is omitted, the server assigns the timestamp. Historical timestamps are allowed. Timestamps more than 5 minutes in the future are rejected.",
 		tags: ["Messages", "Timeline item"],
 		request: {
 			body: {
@@ -105,7 +109,9 @@ messagesRouter.openapi(
 					},
 				},
 			},
-			400: errorJsonResponse("Invalid request"),
+			400: errorJsonResponse(
+				"Invalid request or item.createdAt more than 5 minutes in the future"
+			),
 			401: errorJsonResponse("Unauthorized - Invalid or missing API key"),
 			403: errorJsonResponse(
 				"Forbidden - Public key origin validation failed or actor constraints failed"
@@ -119,6 +125,19 @@ messagesRouter.openapi(
 			await safelyExtractRequestData(c, sendTimelineItemRequestSchema);
 
 		const visitorId = body.item.visitorId || visitorIdHeader || null;
+		let itemCreatedAt: Date | undefined;
+		try {
+			itemCreatedAt = normalizeClientTimelineItemCreatedAt({
+				createdAt: body.item.createdAt,
+				field: "item.createdAt",
+			});
+		} catch (error) {
+			if (error instanceof ClientTimelineItemCreatedAtValidationError) {
+				return restError(c, 400, "BAD_REQUEST", error.message);
+			}
+
+			throw error;
+		}
 
 		const conversation = await getConversationById(db, {
 			conversationId: body.conversationId,
@@ -269,9 +288,7 @@ messagesRouter.openapi(
 						userId: resolvedUserId,
 						aiAgentId: resolvedAiAgentId,
 						visitorId: visitorId ?? null,
-						createdAt: body.item.createdAt
-							? new Date(body.item.createdAt)
-							: undefined,
+						createdAt: itemCreatedAt,
 						tool: body.item.tool ?? null,
 					})
 				: {
@@ -290,9 +307,7 @@ messagesRouter.openapi(
 								aiAgentId: resolvedAiAgentId,
 								visitorId: visitorId ?? null,
 								visibility: body.item.visibility,
-								createdAt: body.item.createdAt
-									? new Date(body.item.createdAt)
-									: undefined,
+								createdAt: itemCreatedAt,
 								tool: body.item.tool ?? null,
 							},
 						}),

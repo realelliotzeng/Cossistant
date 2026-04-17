@@ -634,6 +634,96 @@ describe("POST /v1/conversations", () => {
 		expect(payload.conversation.channel).toBe("widget");
 	});
 
+	it("returns 400 when a default timeline item createdAt is more than 5 minutes in the future", async () => {
+		const dbHarness = createDbHarness({});
+		safelyExtractRequestDataMock.mockResolvedValue({
+			db: dbHarness.db,
+			website: baseWebsite,
+			organization: baseOrganization,
+			visitorIdHeader: "visitor-1",
+			body: {
+				conversationId: "conv-1",
+				visitorId: "visitor-1",
+				defaultTimelineItems: [
+					{
+						type: "message",
+						text: "hello",
+						parts: [{ type: "text", text: "hello" }],
+						visibility: "public",
+						userId: null,
+						visitorId: "visitor-1",
+						aiAgentId: null,
+						createdAt: "3026-02-26T00:00:00.000Z",
+						deletedAt: null,
+					},
+				],
+				channel: "widget",
+			},
+		});
+
+		const { conversationRouter } = await conversationRouterModulePromise;
+		const response = await conversationRouter.request(
+			createValidConversationPostRequest()
+		);
+		const payload = (await response.json()) as {
+			error: string;
+			message: string;
+		};
+
+		expect(response.status).toBe(400);
+		expect(payload).toEqual({
+			error: "BAD_REQUEST",
+			message:
+				"defaultTimelineItems[0].createdAt cannot be more than 5 minutes in the future.",
+		});
+		expect(getVisitorMock).not.toHaveBeenCalled();
+		expect(upsertConversationMock).not.toHaveBeenCalled();
+		expect(createMessageTimelineItemMock).not.toHaveBeenCalled();
+	});
+
+	it("falls back to the server timestamp when a default timeline item omits createdAt", async () => {
+		const dbHarness = createDbHarness({});
+		safelyExtractRequestDataMock.mockResolvedValue({
+			db: dbHarness.db,
+			website: baseWebsite,
+			organization: baseOrganization,
+			visitorIdHeader: "visitor-1",
+			body: {
+				conversationId: "conv-1",
+				visitorId: "visitor-1",
+				defaultTimelineItems: [
+					{
+						type: "message",
+						text: "hello",
+						parts: [{ type: "text", text: "hello" }],
+						visibility: "public",
+						userId: null,
+						visitorId: "visitor-1",
+						aiAgentId: null,
+						deletedAt: null,
+					},
+				],
+				channel: "widget",
+			},
+		});
+		upsertConversationMock.mockResolvedValue({
+			status: "created",
+			conversation: baseConversation,
+		});
+
+		const { conversationRouter } = await conversationRouterModulePromise;
+		const response = await conversationRouter.request(
+			createValidConversationPostRequest()
+		);
+
+		expect(response.status).toBe(200);
+		expect(createMessageTimelineItemMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				createdAt: undefined,
+			})
+		);
+	});
+
 	it("returns 409 when conversationId belongs to another owner tuple", async () => {
 		const dbHarness = createDbHarness({});
 		safelyExtractRequestDataMock.mockResolvedValue({

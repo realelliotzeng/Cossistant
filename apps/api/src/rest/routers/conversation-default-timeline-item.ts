@@ -1,5 +1,9 @@
 import { ConversationTimelineType } from "@cossistant/types";
-import type { TimelineItem } from "@cossistant/types/api/timeline-item";
+import type { TimelineItemCreateInput } from "@cossistant/types/api/timeline-item";
+
+function isDate(value: unknown): value is Date {
+	return value instanceof Date;
+}
 
 type PreparedMessageDefaultTimelineItem = {
 	kind: "message";
@@ -7,7 +11,7 @@ type PreparedMessageDefaultTimelineItem = {
 		id?: string;
 		text: string;
 		extraParts: unknown[];
-		visibility: TimelineItem["visibility"] | undefined;
+		visibility: TimelineItemCreateInput["visibility"] | undefined;
 		userId: string | null;
 		aiAgentId: string | null;
 		visitorId: string | null;
@@ -20,10 +24,10 @@ type PreparedGenericDefaultTimelineItem = {
 	kind: "timeline";
 	input: {
 		id?: string;
-		type: TimelineItem["type"];
+		type: TimelineItemCreateInput["type"];
 		text: string | null;
-		parts: TimelineItem["parts"];
-		visibility: TimelineItem["visibility"] | undefined;
+		parts: NonNullable<TimelineItemCreateInput["parts"]>;
+		visibility: TimelineItemCreateInput["visibility"] | undefined;
 		userId: string | null;
 		aiAgentId: string | null;
 		visitorId: string | null;
@@ -37,9 +41,16 @@ export type PreparedDefaultTimelineItem =
 	| PreparedGenericDefaultTimelineItem;
 
 export function mapDefaultTimelineItemForCreation(
-	item: TimelineItem
+	item: Omit<TimelineItemCreateInput, "createdAt"> & {
+		createdAt?: string | Date;
+	}
 ): PreparedDefaultTimelineItem {
-	const createdAt = item.createdAt ? new Date(item.createdAt) : undefined;
+	const rawCreatedAt = item.createdAt;
+	const createdAt = isDate(rawCreatedAt)
+		? rawCreatedAt
+		: rawCreatedAt
+			? new Date(rawCreatedAt)
+			: undefined;
 	const normalizedType = item.type ?? ConversationTimelineType.MESSAGE;
 
 	if (normalizedType === ConversationTimelineType.MESSAGE) {

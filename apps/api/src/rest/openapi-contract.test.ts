@@ -6,6 +6,7 @@ import {
 	createConversationRequestSchema,
 	getConversationResponseSchema,
 } from "@cossistant/types/api/conversation";
+import { sendTimelineItemRequestSchema } from "@cossistant/types/api/timeline-item";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import {
 	actorUserIdHeader,
@@ -50,10 +51,13 @@ type OpenAPIMetadataSchema = {
 };
 
 type OpenAPISchemaWithProperties = {
+	type?: string | string[];
+	description?: string;
 	properties?: Record<
 		string,
 		OpenAPIMetadataSchema | OpenAPISchemaWithProperties
 	>;
+	items?: OpenAPISchemaWithProperties;
 	required?: string[];
 };
 
@@ -286,6 +290,129 @@ describe("REST OpenAPI contract guards", () => {
 
 		expect(requestValueTypes).toEqual(["boolean", "null", "number", "string"]);
 		expect(responseValueTypes).toEqual(["boolean", "null", "number", "string"]);
+	});
+
+	it("documents client timeline item inputs and createdAt rules for conversation bootstrap and message sends", () => {
+		const app = new OpenAPIHono();
+
+		app.openapi(
+			{
+				method: "post",
+				path: "/conversations",
+				request: {
+					body: {
+						required: true,
+						content: {
+							"application/json": {
+								schema: createConversationRequestSchema,
+							},
+						},
+					},
+				},
+				responses: {
+					200: {
+						description: "Conversation created",
+					},
+				},
+			},
+			(() => new Response(null)) as never
+		);
+
+		app.openapi(
+			{
+				method: "post",
+				path: "/messages",
+				request: {
+					body: {
+						required: true,
+						content: {
+							"application/json": {
+								schema: sendTimelineItemRequestSchema,
+							},
+						},
+					},
+				},
+				responses: {
+					200: {
+						description: "Timeline item created",
+					},
+				},
+			},
+			(() => new Response(null)) as never
+		);
+
+		const doc = app.getOpenAPI31Document({
+			openapi: "3.1.0",
+			info: {
+				title: "OpenAPI timeline input contract test",
+				version: "1.0.0",
+			},
+		});
+
+		const createPath = doc.paths?.["/conversations"]?.post;
+		const createRequestBody = createPath?.requestBody as
+			| OpenAPIJsonContent
+			| undefined;
+		const createRequestSchema = createRequestBody?.content?.["application/json"]
+			?.schema as OpenAPISchemaWithProperties | undefined;
+		const defaultTimelineItemsSchema = createRequestSchema?.properties
+			?.defaultTimelineItems as OpenAPISchemaWithProperties | undefined;
+		const defaultTimelineItemInput = defaultTimelineItemsSchema?.items;
+		const createCreatedAtSchema = defaultTimelineItemInput?.properties
+			?.createdAt as OpenAPIMetadataSchema | undefined;
+
+		const messagesPath = doc.paths?.["/messages"]?.post;
+		const messagesRequestBody = messagesPath?.requestBody as
+			| OpenAPIJsonContent
+			| undefined;
+		const messagesRequestSchema = messagesRequestBody?.content?.[
+			"application/json"
+		]?.schema as OpenAPISchemaWithProperties | undefined;
+		const messageItemInput = messagesRequestSchema?.properties?.item as
+			| OpenAPISchemaWithProperties
+			| undefined;
+		const messageCreatedAtSchema = messageItemInput?.properties?.createdAt as
+			| OpenAPIMetadataSchema
+			| undefined;
+
+		expect(defaultTimelineItemInput?.properties).not.toHaveProperty(
+			"conversationId"
+		);
+		expect(defaultTimelineItemInput?.properties).not.toHaveProperty(
+			"organizationId"
+		);
+		expect(defaultTimelineItemInput?.properties).not.toHaveProperty(
+			"deletedAt"
+		);
+		expect(defaultTimelineItemInput?.required ?? []).not.toContain(
+			"conversationId"
+		);
+		expect(defaultTimelineItemInput?.required ?? []).not.toContain(
+			"organizationId"
+		);
+		expect(defaultTimelineItemInput?.required ?? []).not.toContain("deletedAt");
+		expect(createCreatedAtSchema?.description).toContain(
+			"server assigns the timestamp"
+		);
+		expect(createCreatedAtSchema?.description).toContain(
+			"Historical timestamps are allowed"
+		);
+		expect(createCreatedAtSchema?.description).toContain(
+			"more than 5 minutes in the future are rejected"
+		);
+
+		expect(messageItemInput?.properties).not.toHaveProperty("conversationId");
+		expect(messageItemInput?.properties).not.toHaveProperty("organizationId");
+		expect(messageItemInput?.properties).not.toHaveProperty("deletedAt");
+		expect(messageCreatedAtSchema?.description).toContain(
+			"server assigns the timestamp"
+		);
+		expect(messageCreatedAtSchema?.description).toContain(
+			"Historical timestamps are allowed"
+		);
+		expect(messageCreatedAtSchema?.description).toContain(
+			"more than 5 minutes in the future are rejected"
+		);
 	});
 
 	it("documents contact identify visitorId precedence between body and X-Visitor-Id", () => {

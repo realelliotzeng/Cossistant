@@ -9,7 +9,10 @@ import { conversationRecordSchema } from "../trpc/conversation";
 import { apiTimestampSchema, nullableApiTimestampSchema } from "./common";
 import { conversationMetadataSchema } from "./conversation-metadata";
 import { conversationClarificationSummarySchema } from "./knowledge-clarification";
-import { timelineItemSchema } from "./timeline-item";
+import {
+	timelineItemCreateInputSchema,
+	timelineItemSchema,
+} from "./timeline-item";
 import { visitorProfileSchema } from "./visitor";
 
 export const createConversationRequestSchema = z
@@ -22,8 +25,9 @@ export const createConversationRequestSchema = z
 			description:
 				"Optional idempotency key for conversation creation. If provided, it is scoped to one organization+website+visitor owner tuple; retries with the same tuple reuse the existing conversation.",
 		}),
-		defaultTimelineItems: z.array(timelineItemSchema).openapi({
-			description: "Default timeline items to initiate the conversation with",
+		defaultTimelineItems: z.array(timelineItemCreateInputSchema).openapi({
+			description:
+				"Default timeline items to initiate the conversation with. When an item's createdAt is omitted, the server assigns the timestamp. Historical timestamps are allowed. Timestamps more than 5 minutes in the future are rejected.",
 		}),
 		channel: z.string().default("widget").openapi({
 			description: "Which channel the conversation is from",

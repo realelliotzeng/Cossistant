@@ -411,6 +411,62 @@ export type timelineItemSchema = z.infer<typeof timelineItemSchema>;
 export type TimelineItem = z.infer<typeof timelineItemSchema>;
 export type TimelineItemParts = z.infer<typeof timelineItemPartsSchema>;
 
+export const timelineItemCreateInputSchema = z
+	.object({
+		id: z.string().optional().openapi({
+			description: "Optional client-generated ID for the timeline item",
+		}),
+		type: z
+			.enum([
+				ConversationTimelineType.MESSAGE,
+				ConversationTimelineType.EVENT,
+				ConversationTimelineType.IDENTIFICATION,
+				ConversationTimelineType.TOOL,
+			])
+			.default(ConversationTimelineType.MESSAGE)
+			.openapi({
+				description: "Type of timeline item - defaults to MESSAGE",
+				default: ConversationTimelineType.MESSAGE,
+			}),
+		text: z.string().nullable().openapi({
+			description:
+				"Main text content of the timeline item. Use null for non-text items when no human-readable text is needed.",
+		}),
+		parts: timelineItemPartsSchema.optional(),
+		visibility: z
+			.enum([TimelineItemVisibility.PUBLIC, TimelineItemVisibility.PRIVATE])
+			.default(TimelineItemVisibility.PUBLIC)
+			.openapi({
+				description: "Visibility level of the timeline item",
+				default: TimelineItemVisibility.PUBLIC,
+			}),
+		tool: z.string().nullable().optional().openapi({
+			description:
+				"Optional tool identifier when sending non-message timeline items",
+		}),
+		userId: z.string().nullable().optional().openapi({
+			description: "ID of the user creating this timeline item",
+		}),
+		aiAgentId: z.string().nullable().optional().openapi({
+			description: "ID of the AI agent creating this timeline item",
+		}),
+		visitorId: z.string().nullable().optional().openapi({
+			description: "ID of the visitor creating this timeline item",
+		}),
+		createdAt: apiTimestampInputSchema.optional().openapi({
+			description:
+				"Optional client-authored timestamp. When omitted, the server assigns the timestamp. Historical timestamps are allowed. Timestamps more than 5 minutes in the future are rejected.",
+		}),
+	})
+	.openapi({
+		description:
+			"Client-settable timeline item fields for conversation bootstrap and timeline item creation.",
+	});
+
+export type TimelineItemCreateInput = z.infer<
+	typeof timelineItemCreateInputSchema
+>;
+
 // AI SDK compatible part types
 export type TextPart = z.infer<typeof textPartSchema>;
 export type ReasoningPart = z.infer<typeof reasoningPartSchema>;
@@ -511,47 +567,9 @@ export const sendTimelineItemRequestSchema = z
 		conversationId: z.string().openapi({
 			description: "ID of the conversation to send the timeline item to",
 		}),
-		item: z.object({
-			id: z.string().optional().openapi({
-				description: "Optional client-generated ID for the timeline item",
-			}),
-			type: z
-				.enum([
-					ConversationTimelineType.MESSAGE,
-					ConversationTimelineType.EVENT,
-				])
-				.default(ConversationTimelineType.MESSAGE)
-				.openapi({
-					description: "Type of timeline item - defaults to MESSAGE",
-					default: ConversationTimelineType.MESSAGE,
-				}),
-			text: z.string().openapi({
-				description: "Main text content of the timeline item",
-			}),
-			parts: timelineItemPartsSchema.optional(),
-			visibility: z
-				.enum([TimelineItemVisibility.PUBLIC, TimelineItemVisibility.PRIVATE])
-				.default(TimelineItemVisibility.PUBLIC)
-				.openapi({
-					description: "Visibility level of the timeline item",
-					default: TimelineItemVisibility.PUBLIC,
-				}),
-			tool: z.string().nullable().optional().openapi({
-				description:
-					"Optional tool identifier when sending non-message timeline items",
-			}),
-			userId: z.string().nullable().optional().openapi({
-				description: "ID of the user creating this timeline item",
-			}),
-			aiAgentId: z.string().nullable().optional().openapi({
-				description: "ID of the AI agent creating this timeline item",
-			}),
-			visitorId: z.string().nullable().optional().openapi({
-				description: "ID of the visitor creating this timeline item",
-			}),
-			createdAt: apiTimestampInputSchema.optional().openapi({
-				description: "Optional timestamp for the timeline item",
-			}),
+		item: timelineItemCreateInputSchema.openapi({
+			description:
+				"Timeline item to create. When createdAt is omitted, the server assigns the timestamp. Historical timestamps are allowed. Timestamps more than 5 minutes in the future are rejected.",
 		}),
 	})
 	.openapi({
