@@ -4,8 +4,12 @@ import {
 	PRESENCE_AWAY_WINDOW_MS,
 	PRESENCE_ONLINE_WINDOW_MS,
 } from "@cossistant/types";
-import * as AvatarPrimitive from "@radix-ui/react-avatar";
-import { Facehash as FacehashComponent } from "facehash";
+import {
+	AvatarFallback as FacehashAvatarFallbackPrimitive,
+	AvatarImage as FacehashAvatarImagePrimitive,
+	Avatar as FacehashAvatarPrimitive,
+	Facehash as FacehashComponent,
+} from "facehash";
 import type * as React from "react";
 import { useEffect, useState } from "react";
 import { formatTimeAgo } from "@/lib/date";
@@ -16,9 +20,9 @@ import { TooltipOnHover } from "./tooltip";
 function AvatarContainer({
 	className,
 	...props
-}: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+}: React.ComponentProps<typeof FacehashAvatarPrimitive>) {
 	return (
-		<AvatarPrimitive.Root
+		<FacehashAvatarPrimitive
 			className={cn(
 				"relative flex size-8 shrink-0 overflow-hidden rounded",
 				className
@@ -32,9 +36,9 @@ function AvatarContainer({
 function AvatarImage({
 	className,
 	...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+}: React.ComponentProps<typeof FacehashAvatarImagePrimitive>) {
 	return (
-		<AvatarPrimitive.Image
+		<FacehashAvatarImagePrimitive
 			className={cn("aspect-square size-full", className)}
 			data-slot="avatar-image"
 			{...props}
@@ -43,7 +47,10 @@ function AvatarImage({
 }
 
 interface AvatarFallbackProps
-	extends React.ComponentProps<typeof AvatarPrimitive.Fallback> {
+	extends Omit<
+		React.ComponentProps<typeof FacehashAvatarFallbackPrimitive>,
+		"children" | "facehashProps" | "name"
+	> {
 	value?: string | null;
 	children?: string;
 }
@@ -87,6 +94,7 @@ function Facehash({
 
 function AvatarFallback({
 	className,
+	style,
 	value,
 	children,
 	...props
@@ -95,16 +103,25 @@ function AvatarFallback({
 		getNonEmptyString(value) ?? getNonEmptyString(children) ?? "avatar";
 
 	return (
-		<AvatarPrimitive.Fallback
+		<FacehashAvatarFallbackPrimitive
 			className={cn(
 				"flex size-full items-center justify-center text-black dark:text-black",
 				className
 			)}
 			data-slot="avatar-fallback"
+			facehashProps={{
+				colorClasses: COSSISTANT_FACEHASH_COLOR_CLASSES,
+				enableBlink: true,
+				intensity3d: "dramatic",
+				interactive: false,
+			}}
+			name={facehashName}
+			style={{
+				color: "#000000",
+				...style,
+			}}
 			{...props}
-		>
-			<Facehash name={facehashName} />
-		</AvatarPrimitive.Fallback>
+		/>
 	);
 }
 

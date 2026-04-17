@@ -89,6 +89,7 @@ const FACE_WIDTH = 60;
 const FACE_CENTER_Y = 37;
 const INITIAL_Y = 70;
 const INITIAL_FONT_SIZE = 26;
+const MIN_VISUAL_FACE_HEIGHT = 15;
 
 function toFixedNumber(value: number): number {
 	return Number(value.toFixed(3));
@@ -158,8 +159,13 @@ export function createFacehashScene(
 	const data = computeFacehash({ name, colorsLength });
 	const rotation = pose === "front" ? { x: 0, y: 0 } : data.rotation;
 	const faceGeometry = FACE_GEOMETRIES[data.faceType];
+	// Keep short eye geometries visually comparable to the other face variants.
+	const visualFaceHeight = Math.max(
+		faceGeometry.viewBox.height,
+		MIN_VISUAL_FACE_HEIGHT
+	);
 	const aspectRatio =
-		faceGeometry.viewBox.width / Math.max(faceGeometry.viewBox.height, 1);
+		faceGeometry.viewBox.width / Math.max(visualFaceHeight, 1);
 	const faceHeight = FACE_WIDTH / aspectRatio;
 	const projection = createProjection(rotation, intensity3d);
 	const preset = PROJECTION_PRESETS[intensity3d];

@@ -13,7 +13,7 @@ describe("AvatarInput", () => {
 		expect(html).toContain("Preview");
 	});
 
-	it("renders image preview (and fallback container) when value exists", () => {
+	it("renders the fallback container while delegating image loading to the client", () => {
 		const html = renderToStaticMarkup(
 			<AvatarInput
 				onChange={() => {}}
@@ -26,7 +26,7 @@ describe("AvatarInput", () => {
 			/>
 		);
 
-		expect(html).toContain("https://cdn.example.com/logo.png");
 		expect(html).toContain('data-slot="avatar-fallback"');
+		expect(html).not.toContain('data-slot="avatar-image"');
 	});
 });

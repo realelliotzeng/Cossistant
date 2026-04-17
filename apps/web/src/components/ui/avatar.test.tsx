@@ -1,6 +1,7 @@
 import { describe, expect, it, mock } from "bun:test";
 import type React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { Button } from "./button";
 
 mock.module("./tooltip", () => ({
 	TooltipOnHover: ({
@@ -19,14 +20,40 @@ mock.module("./tooltip", () => ({
 const modulePromise = import("./avatar");
 
 describe("Avatar facehash wrapper", () => {
-	it("pins the fallback foreground to black", async () => {
+	it("keeps standalone facehash interactive and pins the foreground to black", async () => {
 		const { Facehash } = await modulePromise;
 		const html = renderToStaticMarkup(
 			<Facehash className="text-white dark:text-white" name="agent-47" />
 		);
 
 		expect(html).toContain("color:#000000");
+		expect(html).toContain("transform-box:view-box");
 		expect(html).toContain("display:block;overflow:visible;color:inherit");
+	});
+
+	it("renders avatar fallbacks as non-interactive facehashes", async () => {
+		const { Avatar } = await modulePromise;
+		const html = renderToStaticMarkup(
+			<Avatar fallbackName="Quick Tornado" tooltipContent={null} url={null} />
+		);
+
+		expect(html).toContain('data-slot="avatar-fallback"');
+		expect(html).not.toContain("transform-box:view-box");
+		expect(html).toContain("color:#000000");
+	});
+
+	it("keeps the facehash scene full-size inside shared buttons", async () => {
+		const { Avatar } = await modulePromise;
+		const html = renderToStaticMarkup(
+			<Button size="icon-small" variant="ghost">
+				<Avatar fallbackName="Quick Tornado" tooltipContent={null} url={null} />
+			</Button>
+		);
+
+		expect(html).toContain('data-slot="button"');
+		expect(html).toContain(
+			"display:block;overflow:visible;color:inherit;width:100%;height:100%"
+		);
 	});
 
 	it("uses a fit-content wrapper and supports overriding tooltip content", async () => {

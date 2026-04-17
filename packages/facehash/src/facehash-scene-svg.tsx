@@ -57,6 +57,8 @@ export function FacehashSceneSvg({
 				display: "block",
 				overflow: "visible",
 				...style,
+				width,
+				height,
 			}}
 			viewBox="0 0 100 100"
 			width={width}

@@ -9,7 +9,9 @@ describe("Facehash", () => {
 		);
 
 		expect(html).toContain('class="facehash text-[#123456]"');
-		expect(html).toContain("display:block;overflow:visible;color:inherit");
+		expect(html).toContain(
+			"display:block;overflow:visible;color:inherit;width:100%;height:100%"
+		);
 		expect(html).not.toContain("color:black");
 	});
 });

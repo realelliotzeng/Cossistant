@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { type Conversation, ConversationStatus } from "@cossistant/types";
+import { Facehash } from "facehash";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { SupportTextResolvedFormatter } from "../text/locales/keys";
@@ -45,10 +46,19 @@ mock.module("../text", () => ({
 
 mock.module("./avatar", () => ({
 	Avatar: ({ name, facehashName }: { name: string; facehashName?: string }) =>
-		React.createElement("div", {
-			"data-avatar": name,
-			"data-facehash-name": facehashName ?? "",
-		}),
+		React.createElement(
+			"div",
+			{
+				"data-avatar": name,
+				"data-facehash-name": facehashName ?? "",
+			},
+			React.createElement(Facehash, {
+				className: "size-full text-black",
+				interactive: false,
+				name: facehashName ?? name,
+				size: "100%",
+			})
+		),
 }));
 
 mock.module("./icons", () => ({
@@ -276,5 +286,14 @@ describe("ConversationButtonLink", () => {
 
 		expect(html).toContain('data-avatar="Support Team"');
 		expect(html).toContain('data-facehash-name="support@example.com"');
+	});
+
+	it("keeps the nested facehash scene full-size inside the conversation button", async () => {
+		const html = await renderConversationButtonLink();
+
+		expect(html).toContain("group/btn");
+		expect(html).toContain(
+			"display:block;overflow:visible;color:inherit;width:100%;height:100%"
+		);
 	});
 });

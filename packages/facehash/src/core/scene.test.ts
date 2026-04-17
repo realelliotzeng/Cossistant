@@ -62,4 +62,25 @@ describe("createFacehashScene", () => {
 		expect(Math.abs(scene.projection.skewX)).toBe(0);
 		expect(Math.abs(scene.projection.skewY)).toBe(0);
 	});
+
+	it("normalizes short eye geometries without changing taller variants", () => {
+		const roundScene = createFacehashScene({
+			name: findNameForFaceType("round"),
+		});
+		const crossScene = createFacehashScene({
+			name: findNameForFaceType("cross"),
+		});
+		const lineScene = createFacehashScene({
+			name: "Support team",
+		});
+
+		expect(roundScene.data.faceType).toBe("round");
+		expect(crossScene.data.faceType).toBe("cross");
+		expect(lineScene.data.faceType).toBe("line");
+
+		expect(roundScene.faceBox.height).toBeCloseTo(60 * (15 / 63), 3);
+		expect(crossScene.faceBox.height).toBeCloseTo(60 * (23 / 71), 3);
+		expect(lineScene.faceBox.height).toBeCloseTo(60 * (15 / 82), 3);
+		expect(lineScene.faceBox.height).toBeGreaterThan(10);
+	});
 });
