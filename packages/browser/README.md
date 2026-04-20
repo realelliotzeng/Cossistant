@@ -29,6 +29,26 @@ release.
 - exposes `window.Cossistant.init()`, `show()`, `hide()`, `toggle()`,
   `identify()`, `updateConfig()`, `destroy()`, `on()`, and `off()`
 
+## CDN usage
+
+Load the latest widget from the CDN with:
+
+```html
+<script async src="https://cdn.cossistant.com/widget/latest/loader.js"></script>
+<script>
+  window.Cossistant.init({
+    publicKey: "pk_live_..."
+  });
+</script>
+```
+
+The loader derives `widget.js` and `widget.css` from its own URL, so the
+versioned form works the same way:
+
+```html
+<script async src="https://cdn.cossistant.com/widget/0.1.2/loader.js"></script>
+```
+
 ## Release model
 
 - `@cossistant/browser` is in the same Changesets fixed-version group as

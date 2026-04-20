@@ -63,7 +63,7 @@ describe("createFacehashScene", () => {
 		expect(Math.abs(scene.projection.skewY)).toBe(0);
 	});
 
-	it("normalizes short eye geometries without changing taller variants", () => {
+	it("keeps each face geometry at its raw aspect ratio", () => {
 		const roundScene = createFacehashScene({
 			name: findNameForFaceType("round"),
 		});
@@ -80,7 +80,7 @@ describe("createFacehashScene", () => {
 
 		expect(roundScene.faceBox.height).toBeCloseTo(60 * (15 / 63), 3);
 		expect(crossScene.faceBox.height).toBeCloseTo(60 * (23 / 71), 3);
-		expect(lineScene.faceBox.height).toBeCloseTo(60 * (15 / 82), 3);
-		expect(lineScene.faceBox.height).toBeGreaterThan(10);
+		expect(lineScene.faceBox.height).toBeCloseTo(60 * (8 / 82), 3);
+		expect(lineScene.faceBox.height).toBeLessThan(6);
 	});
 });
