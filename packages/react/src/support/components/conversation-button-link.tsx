@@ -158,7 +158,7 @@ export function ConversationButtonLink({
 					variant: "secondary",
 					size: "large",
 				}),
-				"group/btn relative gap-2 border-0 border-co-border/50 border-b pr-3 pl-3 text-left transition-colors first-of-type:rounded-t last-of-type:rounded-b last-of-type:border-b-0 has-[>svg]:pl-3",
+				"group/btn relative gap-2 border-0 border-co-border/50 border-b pr-3 pl-3 text-left transition-colors first-of-type:rounded-t-[var(--co-radius)] last-of-type:rounded-b-[var(--co-radius)] last-of-type:border-b-0 has-[>svg]:pl-3",
 				className
 			)}
 			onClick={onClick}
@@ -193,7 +193,7 @@ export function ConversationButtonLink({
 
 			{/* <div
         className={cn(
-          "mr-6 inline-flex items-center rounded px-2 py-0.5 font-medium text-[9px] uppercase",
+          "mr-6 inline-flex items-center rounded-co px-2 py-0.5 font-medium text-[9px] uppercase",
           statusBadgeClassName,
         )}
       >

@@ -344,7 +344,7 @@ export const Content: React.FC<ContentPropsType> = ({
 					"max-md:fixed max-md:inset-0 max-md:z-[9999]",
 
 					// Desktop: floating window base styles
-					"md:z-[9999] md:aspect-[9/17] md:max-h-[calc(100vh-6rem)] md:w-[400px] md:rounded-md md:border md:border-co-border md:shadow md:dark:shadow-co-background-600/50",
+					"md:z-[9999] md:aspect-[9/17] md:max-h-[calc(100vh-6rem)] md:w-[400px] md:rounded-co md:border md:border-co-border md:shadow md:dark:shadow-co-background-600/50",
 
 					// Positioning mode specific styles
 					// Use fixed positioning when Floating UI has valid coordinates,

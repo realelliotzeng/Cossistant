@@ -118,7 +118,7 @@ export const ConversationHistoryPage: React.FC<ConversationHistoryPageProps> = (
 			>
 				{history.conversations.length > 0 && (
 					<div className="flex w-full flex-col items-center justify-between gap-2 pt-4">
-						<div className="flex w-full flex-col overflow-clip rounded-md border border-co-border/80">
+						<div className="flex w-full flex-col overflow-clip rounded-co border border-co-border/80">
 							{history.visibleConversations.map((conversation) => (
 								<ConversationButtonLink
 									className="rounded-none"

@@ -658,9 +658,32 @@ describe("Support widget", () => {
 			join(import.meta.dir, "support.css"),
 			"utf8"
 		);
+		const animationSource = readFileSync(
+			join(import.meta.dir, "animations.css"),
+			"utf8"
+		);
 
 		expect(source).not.toContain('import "./support.css";');
+		expect(cssSource).toContain("font-family: var(--co-font-sans);");
+		expect(cssSource).toContain("--co-theme-background");
+		expect(cssSource).toContain("--background, oklch(99% 0 0)");
+		expect(cssSource).toContain(
+			'var(--font-sans, "Geist", "Inter", sans-serif)'
+		);
 		expect(cssSource).toContain('@source "../primitives";');
 		expect(cssSource).toContain('@source "../feedback/components";');
+		expect(animationSource).toContain(
+			'[data-co-spinner][data-co-spinner-variant="orbit"]'
+		);
+		expect(animationSource).not.toContain(".co-spinner {");
+	});
+
+	it("adds a stable root hook without changing the public API", async () => {
+		await renderWithSupport(<Support />);
+
+		const root = findByDataSlot("root");
+
+		expect(root).not.toBeNull();
+		expect(root?.hasAttribute("data-cossistant-root")).toBe(true);
 	});
 });

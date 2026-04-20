@@ -75,7 +75,7 @@ export const ConfigurationErrorDisplay: React.FC<
 				{isInvalidKey ? (
 					<>
 						{/* Error details card */}
-						<div className="rounded-lg border border-co-orange/20 bg-co-orange/5 p-4">
+						<div className="rounded-co-lg border border-co-orange/20 bg-co-orange/5 p-4">
 							<h4 className="mb-2 font-medium text-co-foreground text-sm">
 								Common causes:
 							</h4>
@@ -142,7 +142,7 @@ export const ConfigurationErrorDisplay: React.FC<
 								<h4 className="mt-1 font-medium text-sm">
 									Add to your environment
 								</h4>
-								<div className="mt-2 overflow-hidden rounded-lg border border-co-border bg-co-background-100">
+								<div className="mt-2 overflow-hidden rounded-co-lg border border-co-border bg-co-background-100">
 									<div className="border-co-border border-b bg-co-background-50 px-3 py-1">
 										<span className="font-mono text-co-muted-foreground text-xs">
 											.env
@@ -167,7 +167,7 @@ export const ConfigurationErrorDisplay: React.FC<
 			<div className="border-co-border border-t p-4">
 				<a
 					className={cn(
-						"flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5",
+						"flex w-full items-center justify-center gap-2 rounded-co-lg px-4 py-2.5",
 						"bg-co-primary text-co-primary-foreground",
 						"font-medium text-sm",
 						"transition-all hover:opacity-90 active:scale-[0.98]"

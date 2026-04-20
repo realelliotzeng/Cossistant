@@ -362,7 +362,7 @@ function renderMarkdownToken(
 			if (mention) {
 				return (
 					<span
-						className="rounded bg-co-orange/15 font-medium text-co-orange"
+						className="rounded-co bg-co-orange/15 font-medium text-co-orange"
 						data-mention-id={mention.mentionId}
 						data-mention-type={mention.mentionType}
 						key={key}
@@ -391,7 +391,7 @@ function renderMarkdownToken(
 		case "mention":
 			return (
 				<span
-					className="rounded bg-co-orange/15 font-medium text-co-orange"
+					className="rounded-co bg-co-orange/15 font-medium text-co-orange"
 					data-mention-id={token.mention.id}
 					data-mention-type={token.mention.type}
 					key={key}

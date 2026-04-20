@@ -322,10 +322,15 @@ describe("support docs examples", () => {
 			'className="inline-block size-4 border border-dashed border-border align-middle"'
 		);
 		expect(themeDoc).toContain('<ColorSwatch value="oklch(99% 0 0)" />');
+		expect(themeDoc).toContain("## Theme precedence");
+		expect(themeDoc).toContain(
+			"## Works automatically with shadcn-style tokens"
+		);
 		expect(themeDoc).toContain("### Status colors");
 		expect(themeDoc).toContain("### Avatar accents");
 		expect(themeDoc).toContain("### Background shades");
 		expect(themeDoc).toContain("--co-theme-radius: 0px;");
+		expect(themeDoc).toContain("custom spacing scales");
 	});
 
 	it("renders docs previews through the docs-only wrapper and support alias", async () => {

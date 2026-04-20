@@ -113,14 +113,14 @@ export const IdentificationTimelineTool: React.FC<
 	}, [errorMessage, hasSucceeded, successLabel]);
 
 	return (
-		<div className="mt-6 rounded border border-co-border bg-co-background p-4">
+		<div className="mt-6 rounded-co border border-co-border bg-co-background p-4">
 			<div className="flex flex-col gap-3">
 				<div className="flex flex-col gap-1">
 					<h3 className="font-semibold text-sm">{title}</h3>
 					<p className="text-co-muted-foreground text-xs">{description}</p>
 				</div>
 				{hasSucceeded ? (
-					<div className="rounded-md bg-co-primary/10 px-3 py-2 text-co-primary text-sm">
+					<div className="rounded-co bg-co-primary/10 px-3 py-2 text-co-primary text-sm">
 						{successLabel}
 					</div>
 				) : (
@@ -128,7 +128,7 @@ export const IdentificationTimelineTool: React.FC<
 						<input
 							aria-label={text("component.identificationTool.inputLabel")}
 							autoComplete="email"
-							className="h-10 w-full rounded border border-co-border bg-transparent px-3 py-2 text-sm outline-none focus:border-co-primary focus:ring-2 focus:ring-co-primary/20"
+							className="h-10 w-full rounded-co border border-co-border bg-transparent px-3 py-2 text-sm outline-none focus:border-co-primary focus:ring-2 focus:ring-co-primary/20"
 							disabled={submitDisabled}
 							inputMode="email"
 							onChange={(event) => setEmail(event.target.value)}

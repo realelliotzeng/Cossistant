@@ -78,7 +78,7 @@ export const TimelineItemImages = (() => {
 							<div className="flex flex-wrap gap-2">
 								{images.map((image, index) => (
 									<button
-										className="group relative overflow-hidden rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2"
+										className="group relative overflow-hidden rounded-co-lg focus:outline-none focus:ring-2 focus:ring-offset-2"
 										key={image.url}
 										onClick={() => onImageClick?.(index)}
 										type="button"
@@ -87,7 +87,7 @@ export const TimelineItemImages = (() => {
 										{/* biome-ignore lint/nursery/useImageSize: Dynamic image dimensions not known at render time */}
 										<img
 											alt={image.filename || `Image ${index + 1}`}
-											className="max-h-[200px] max-w-[300px] cursor-pointer rounded-lg object-cover transition-transform group-hover:scale-105"
+											className="max-h-[200px] max-w-[300px] cursor-pointer rounded-co-lg object-cover transition-transform group-hover:scale-105"
 											loading="lazy"
 											src={image.url}
 										/>
@@ -166,7 +166,7 @@ export const TimelineItemFiles = (() => {
 							<div className="flex flex-col gap-2">
 								{files.map((file) => (
 									<a
-										className="flex items-center gap-2 rounded-lg bg-co-muted/50 px-3 py-2 text-sm transition-colors hover:bg-co-muted"
+										className="flex items-center gap-2 rounded-co-lg bg-co-muted/50 px-3 py-2 text-sm transition-colors hover:bg-co-muted"
 										download={file.filename}
 										href={file.url}
 										key={file.url}

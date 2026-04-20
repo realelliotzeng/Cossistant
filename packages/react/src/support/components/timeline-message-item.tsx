@@ -66,7 +66,7 @@ export function TimelineMessageItem({
 				<TimelineCommandBlock commands={commands} />
 			),
 			inlineCode: ({ code }) => (
-				<code className="rounded bg-co-background-300 px-1 py-0.5 text-xs">
+				<code className="rounded-co bg-co-background-300 px-1 py-0.5 text-xs">
 					{code}
 				</code>
 			),
@@ -105,7 +105,7 @@ export function TimelineMessageItem({
 								{hasText && (
 									<TimelineItemContent
 										className={cn(
-											"inline-block min-w-0 break-words rounded-lg px-3.5 py-2.5 text-sm",
+											"inline-block min-w-0 break-words rounded-co-lg px-3.5 py-2.5 text-sm",
 											messageWidthClassName,
 											isSentByViewerFinal ? "self-end" : "self-start",
 											{
@@ -113,9 +113,9 @@ export function TimelineMessageItem({
 													!isSentByViewerFinal,
 												"bg-co-primary text-co-primary-foreground":
 													isSentByViewerFinal,
-												"rounded-br-sm":
+												"rounded-br-[calc(var(--co-radius)/2)]":
 													isLast && isSentByViewerFinal && !hasAttachments,
-												"rounded-bl-sm":
+												"rounded-bl-[calc(var(--co-radius)/2)]":
 													isLast && !isSentByViewerFinal && !hasAttachments,
 											}
 										)}
@@ -135,7 +135,7 @@ export function TimelineMessageItem({
 									>
 										{images.map((image, index) => (
 											<button
-												className="group relative overflow-hidden rounded-lg focus:outline-none focus:ring-2 focus:ring-co-primary/50"
+												className="group relative overflow-hidden rounded-co-lg focus:outline-none focus:ring-2 focus:ring-co-primary/50"
 												key={image.url}
 												onClick={() => openLightbox(index)}
 												type="button"
@@ -144,7 +144,7 @@ export function TimelineMessageItem({
 												{/* biome-ignore lint/nursery/useImageSize: Dynamic image dimensions not known at render time */}
 												<img
 													alt={image.filename || `Image ${index + 1}`}
-													className="max-h-[150px] max-w-[200px] cursor-pointer rounded-lg object-cover transition-transform group-hover:scale-105"
+													className="max-h-[150px] max-w-[200px] cursor-pointer rounded-co-lg object-cover transition-transform group-hover:scale-105"
 													loading="lazy"
 													src={image.url}
 												/>
@@ -159,7 +159,7 @@ export function TimelineMessageItem({
 										{files.map((file) => (
 											<a
 												className={cn(
-													"flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition-colors",
+													"flex items-center gap-2 rounded-co-lg px-3 py-2 text-xs transition-colors",
 													{
 														"bg-co-background-300 text-co-foreground hover:bg-co-background-400 dark:bg-co-background-600 dark:hover:bg-co-background-500":
 															!isSentByViewerFinal,

@@ -15,7 +15,7 @@ export function TimelineCodeBlock({
 }: TimelineCodeBlockProps): React.ReactElement {
 	return (
 		<PrimitiveTimelineCodeBlock
-			className={`mt-1 w-full overflow-hidden rounded border border-co-border bg-co-background-200 text-co-foreground ${className ?? ""}`.trim()}
+			className={`mt-1 w-full overflow-hidden rounded-co border border-co-border bg-co-background-200 text-co-foreground ${className ?? ""}`.trim()}
 			code={code}
 			fileName={fileName}
 			language={language}
@@ -36,7 +36,7 @@ export function TimelineCodeBlock({
 									{resolvedFileName}
 								</span>
 							) : null}
-							<span className="rounded border border-co-border/70 bg-co-background-500 px-1.5 py-0.5 font-medium text-[10px] text-co-muted-foreground uppercase tracking-wide">
+							<span className="rounded-co border border-co-border/70 bg-co-background-500 px-1.5 py-0.5 font-medium text-[10px] text-co-muted-foreground uppercase tracking-wide">
 								{languageLabel}
 							</span>
 						</div>

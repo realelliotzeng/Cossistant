@@ -139,7 +139,7 @@ export const MultimodalInput: React.FC<MultimodalInputProps> = ({
 			{/* Error message */}
 			{error && (
 				<div
-					className="rounded-md bg-co-destructive-muted p-2 text-co-destructive text-xs"
+					className="rounded-co bg-co-destructive-muted p-2 text-co-destructive text-xs"
 					id="multimodal-input-error"
 				>
 					{error.message}
@@ -165,7 +165,7 @@ export const MultimodalInput: React.FC<MultimodalInputProps> = ({
 						{files.map((file, index) => (
 							<div
 								className={cn(
-									"flex items-center gap-2 rounded-md bg-co-muted px-2 py-1 text-xs",
+									"flex items-center gap-2 rounded-co bg-co-muted px-2 py-1 text-xs",
 									isUploading && "opacity-70"
 								)}
 								key={`${file.name}-${index}`}
@@ -194,7 +194,7 @@ export const MultimodalInput: React.FC<MultimodalInputProps> = ({
 			)}
 
 			{/* Input area */}
-			<div className="group/multimodal-input flex flex-col rounded border border-co-border bg-co-background ring-offset-2 focus-within:ring-1 focus-within:ring-co-primary/10 dark:bg-co-background-200">
+			<div className="group/multimodal-input flex flex-col rounded-co border border-co-border bg-co-background ring-offset-2 focus-within:ring-1 focus-within:ring-co-primary/10 dark:bg-co-background-200">
 				<div className="max-h-[200px] overflow-y-auto">
 					<Primitive.MultimodalInput
 						autoFocus
@@ -224,7 +224,7 @@ export const MultimodalInput: React.FC<MultimodalInputProps> = ({
 								<button
 									aria-label={text("common.actions.attachFiles")}
 									className={cn(
-										"group flex h-8 w-8 items-center justify-center rounded-md text-co-muted-foreground hover:bg-co-muted hover:text-co-foreground disabled:cursor-not-allowed disabled:opacity-50",
+										"group flex h-8 w-8 items-center justify-center rounded-co text-co-muted-foreground hover:bg-co-muted hover:text-co-foreground disabled:cursor-not-allowed disabled:opacity-50",
 										files.length >= maxFiles && "opacity-50"
 									)}
 									disabled={
@@ -270,7 +270,7 @@ export const SendButton: React.FC<SendButtonProps> = ({
 }) => (
 	<Primitive.Button
 		className={cn(
-			"group flex h-8 w-8 items-center justify-center rounded-md text-co-primary hover:bg-co-muted disabled:cursor-not-allowed disabled:opacity-50",
+			"group flex h-8 w-8 items-center justify-center rounded-co text-co-primary hover:bg-co-muted disabled:cursor-not-allowed disabled:opacity-50",
 			className
 		)}
 		disabled={disabled}

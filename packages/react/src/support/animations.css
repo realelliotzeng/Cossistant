@@ -2,7 +2,8 @@
  * Widget animations — pure CSS replacements for motion library.
  * All keyframes are prefixed with `co-` to avoid conflicts.
  * Widget utility classes stay scoped under `.cossistant`.
- * Shared spinner classes stay unscoped so dashboard and widget can reuse them.
+ * Shared spinner classes use dedicated data attributes so dashboard and widget
+ * can reuse them without leaking package-owned class selectors.
  */
 
 @layer utilities {
@@ -102,7 +103,7 @@
 	/* Animation classes (scoped to widget)                               */
 	/* ------------------------------------------------------------------ */
 
-	.co-spinner {
+	[data-co-spinner] {
 		display: inline-grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		grid-template-rows: repeat(3, minmax(0, 1fr));
@@ -112,7 +113,7 @@
 		vertical-align: middle;
 	}
 
-	.co-spinner__cell {
+	[data-co-spinner-cell] {
 		background: currentColor;
 		animation-duration: 1.15s;
 		animation-delay: var(--co-spinner-delay, 0ms);
@@ -122,22 +123,22 @@
 		will-change: opacity;
 	}
 
-	.co-spinner[data-co-spinner-variant="orbit"] .co-spinner__cell {
+	[data-co-spinner][data-co-spinner-variant="orbit"] [data-co-spinner-cell] {
 		animation-duration: 1.6s;
 		animation-name: co-spinner-orbit;
 	}
 
-	.co-spinner[data-co-spinner-variant="wave"] .co-spinner__cell {
+	[data-co-spinner][data-co-spinner-variant="wave"] [data-co-spinner-cell] {
 		animation-duration: 1.75s;
 		animation-name: co-spinner-wave;
 	}
 
-	.co-spinner[data-co-spinner-variant="pulse"] .co-spinner__cell {
+	[data-co-spinner][data-co-spinner-variant="pulse"] [data-co-spinner-cell] {
 		animation-duration: 1.4s;
 		animation-name: co-spinner-pulse;
 	}
 
-	.cossistant {
+	:where(.cossistant, [data-cossistant-root]) {
 		.co-animate-fade-in {
 			animation: co-fade-in 0.3s ease-out both;
 		}
@@ -172,13 +173,13 @@
 	/* ------------------------------------------------------------------ */
 
 	@media (prefers-reduced-motion: reduce) {
-		.co-spinner__cell {
+		[data-co-spinner-cell] {
 			animation: none;
 			opacity: 0.65;
 			transform: none;
 		}
 
-		.cossistant {
+		:where(.cossistant, [data-cossistant-root]) {
 			.co-animate-fade-in,
 			.co-animate-fade-in-scale,
 			.co-animate-slide-up-blur,

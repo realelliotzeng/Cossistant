@@ -83,7 +83,7 @@ export function ConversationResolvedFeedback({
 	return (
 		<div
 			className={cn(
-				"m-4 rounded-md border border-co-border/60 bg-co-background-100 px-4 py-3 text-center text-sm shadow-sm",
+				"m-4 rounded-co border border-co-border/60 bg-co-background-100 px-4 py-3 text-center text-sm shadow-sm",
 				className
 			)}
 		>
@@ -98,7 +98,7 @@ export function ConversationResolvedFeedback({
 			/>
 			<FeedbackRatingSelector
 				buttonClassName={cn(
-					"rounded-md",
+					"rounded-co",
 					isInteractive ? "hover:bg-co-muted" : "opacity-70"
 				)}
 				className="mt-2 justify-center"
@@ -118,7 +118,7 @@ export function ConversationResolvedFeedback({
 			{showCommentField && (
 				<div className="mt-3 space-y-2">
 					<FeedbackCommentInput
-						className="w-full resize-none rounded-md border border-co-border bg-co-background px-3 py-2 text-co-foreground text-sm placeholder:text-co-muted-foreground focus:border-co-primary focus:outline-none focus:ring-1 focus:ring-co-primary"
+						className="w-full resize-none rounded-co border border-co-border bg-co-background px-3 py-2 text-co-foreground text-sm placeholder:text-co-muted-foreground focus:border-co-primary focus:outline-none focus:ring-1 focus:ring-co-primary"
 						disabled={isSubmitting}
 						onValueChange={setComment}
 						placeholder={text("component.conversationPage.commentPlaceholder")}
@@ -128,7 +128,7 @@ export function ConversationResolvedFeedback({
 					/>
 					<button
 						className={cn(
-							"w-full rounded-md bg-co-primary px-4 py-2 font-medium text-co-primary-foreground text-sm transition-colors",
+							"w-full rounded-co bg-co-primary px-4 py-2 font-medium text-co-primary-foreground text-sm transition-colors",
 							isSubmitting
 								? "cursor-not-allowed opacity-50"
 								: "hover:bg-co-primary/90"

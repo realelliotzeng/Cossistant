@@ -13,7 +13,7 @@ export function TimelineCommandBlock({
 }: TimelineCommandBlockProps): React.ReactElement {
 	return (
 		<PrimitiveTimelineCommandBlock
-			className={`mt-1 w-full overflow-hidden rounded border border-co-border bg-co-background-200 text-co-foreground ${className ?? ""}`.trim()}
+			className={`mt-1 w-full overflow-hidden rounded-co border border-co-border bg-co-background-200 text-co-foreground ${className ?? ""}`.trim()}
 			commands={commands}
 		>
 			{({

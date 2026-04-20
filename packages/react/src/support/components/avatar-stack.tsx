@@ -176,7 +176,7 @@ export function AvatarStack({
 								);
 							})()}
 						{item.type === "count" && (
-							<div className="flex size-full items-center justify-center rounded bg-co-background-200 font-medium text-co-primary text-sm ring-1 ring-co-border/30 dark:bg-co-background-500">
+							<div className="flex size-full items-center justify-center rounded-co bg-co-background-200 font-medium text-co-primary text-sm ring-1 ring-co-border/30 dark:bg-co-background-500">
 								+{item.count}
 							</div>
 						)}

@@ -115,7 +115,7 @@ export const HomePage = (_props: HomePageProps = {}): ReactElement => {
 						>
 							{quickOptions?.map((option) => (
 								<CoButton
-									className="inline-flex w-fit rounded-lg border-dashed px-2"
+									className="inline-flex w-fit rounded-co-lg border-dashed px-2"
 									key={option}
 									onClick={() => home.startConversation(option)}
 									size="default"
@@ -147,7 +147,7 @@ export const HomePage = (_props: HomePageProps = {}): ReactElement => {
 				)}
 
 				{home.lastOpenConversation && (
-					<div className="flex w-full flex-col overflow-clip rounded border border-co-border/80">
+					<div className="flex w-full flex-col overflow-clip rounded-co border border-co-border/80">
 						<ConversationButtonLink
 							className="rounded-none"
 							conversation={home.lastOpenConversation}

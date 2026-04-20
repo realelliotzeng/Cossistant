@@ -47,6 +47,9 @@ export default function RootLayout({
 
 ### 4. Import styles
 
+The widget does not inject styles automatically. Use `support.css` when your app already runs Tailwind CSS v4. Use `styles.css` everywhere else.
+Both entrypoints share the same widget theme behavior, and both will automatically pick up common shadcn-style host tokens like `--background`, `--primary`, `--radius`, and `--font-sans` when they exist.
+
 <Tabs defaultValue="tailwind" className="mt-6">
   <TabsList>
     <TabsTrigger value="tailwind">Tailwind v4</TabsTrigger>

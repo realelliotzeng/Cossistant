@@ -78,7 +78,7 @@ export function Avatar({
 			return (
 				<div
 					className={cn(
-						"flex items-center justify-center rounded bg-co-background-200 ring-1 ring-co-border/30 dark:bg-co-background-500",
+						"flex items-center justify-center rounded-co bg-co-background-200 ring-1 ring-co-border/30 dark:bg-co-background-500",
 						className
 					)}
 				>
@@ -94,7 +94,7 @@ export function Avatar({
 		return (
 			<AvatarPrimitive
 				className={cn(
-					"flex size-9 items-center justify-center overflow-clip rounded bg-co-background-200 ring-1 ring-co-border/30 dark:bg-co-background-500",
+					"flex size-9 items-center justify-center overflow-clip rounded-co bg-co-background-200 ring-1 ring-co-border/30 dark:bg-co-background-500",
 					className
 				)}
 			>
@@ -116,7 +116,7 @@ export function Avatar({
 		<div className={cn("relative", className)}>
 			<AvatarPrimitive
 				className={cn(
-					"flex size-full items-center justify-center overflow-clip rounded bg-co-background-200 ring-1 ring-co-border/30 dark:bg-co-background-500"
+					"flex size-full items-center justify-center overflow-clip rounded-co bg-co-background-200 ring-1 ring-co-border/30 dark:bg-co-background-500"
 				)}
 			>
 				{image && image.trim() !== "" && <AvatarImage alt={name} src={image} />}
