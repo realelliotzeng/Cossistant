@@ -1,54 +1,143 @@
 # Findings
 
 ## Requirements
-- Run `bun fix` from the repo root and fix the issues it reports.
-- Run `bun run check-types` from the repo root and fix failures.
-- Make sure packages are building successfully.
-- Do this safely in a large dirty worktree without reverting unrelated work.
+- Write a Tinybird guest post draft in repo root as `tinybird-guest-post-cossistant.md`
+- Match the feel of recent Tinybird customer stories without copying them
+- Keep the story human, readable, and low-jargon
+- Ground every Cossistant claim in repo truth or explicit user-approved facts
+- Include screenshot recommendations and approval notes
 
-## Research Findings
-- Root `package.json` defines:
-  - `fix`: `bunx ultracite fix`
-  - `check-types`: `bun run check:ai-pipeline-hard-cut && turbo run check-types`
-  - `build`: `turbo run build`
-- The repo already has extensive unrelated modifications across `apps/*` and `packages/*`.
-- Existing planning files were from a prior analytics task and were replaced for this run.
-- Initial `bun fix` run auto-fixed 72 files, then stopped on 23 remaining diagnostics plus one warning.
-- Remaining manual diagnostics were concentrated in React support demo/example files, a test helper, one composer UI test page, and a hooks-order issue in `packages/react/src/support/components/conversation-timeline.tsx`.
-- A second `bun fix` pass narrowed the remainder to:
-  - a misplaced `biome-ignore-all` suppression in `packages/react/src/identify-visitor.tsx`
-  - a default-parameter-order issue in `packages/react/src/hooks/use-conversation-typing.test.tsx`
-- A third `bun fix` pass completed cleanly with no additional fixes needed.
-- The initial root `check-types` failure was isolated to `apps/web`.
-- `apps/web` had two categories of issues:
-  - stale generated `.next/types` references to a deleted route
-  - real source mismatches in the timeline preview/test harness where cached timeline item types and widget/dashboard preview types had drifted apart
-- Clearing `apps/web/.next/types` and `apps/web/.next/dev/types` removed the stale validator reference to the deleted `composer-ui-test` page.
-- The remaining `apps/web` source fixes were limited to timeline preview typings, fake support controller callback annotations, and a safe fallback in `getTimelineUiPreset`.
-- `bun run --filter @cossistant/web check-types` passed after those fixes, and the full root `bun run check-types` passed on the next run.
-- The root `bun run build` passed successfully across the Turbo build graph.
-- `apps/web` build emitted non-blocking warnings:
-  - missing `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` during build
-  - a Turbopack NFT trace warning pointing at `apps/web/next.config.mjs` via docs component source loading
-- `apps/facehash-landing` and `examples/nextjs-tailwind` also completed their production builds successfully.
+## Tinybird Story Pattern Scan
+- `Maple`
+  - Leans into developer experience, TypeScript resources, local-first workflow, and AI agents helping with iteration
+  - Good reference for the "LLMs were genuinely useful" angle
+- `Order Editing`
+  - Strong small-team framing: stop babysitting infrastructure and get back to building product
+  - Good reference for keeping the problem concrete and relatable
+- `Fever`
+  - Emphasizes reliability under load and safer iteration
+  - Useful for talking about trust and stability without overdoing performance claims
+- `Marc Lou`
+  - Strong "power without complexity" framing
+  - Useful reference for plain-language positioning
+- `Plain`
+  - Closest support-space comparison
+  - Their angle is real-time support insights embedded throughout the product
+  - We should not center that angle
+  - Cossistant's stronger differentiator is live visitor presence on a globe plus API-first flexibility for custom support builds
 
-## Technical Decisions
-| Decision | Rationale |
-|----------|-----------|
-| Start with root scripts instead of package-by-package guesses | Keeps the work aligned with how the repo is meant to be verified |
-| Log only failures that block requested commands | Prevents side tracking in a noisy dirty worktree |
+## Cossistant Product Facts Verified In Repo
+- Cossistant describes itself as an open-source chat support widget for the React ecosystem with a code-first, API-driven philosophy in `/Users/anthonyriera/code/cossistant-monorepo/README.md`
+- Cossistant offers headless primitives and reusable support components in:
+  - `/Users/anthonyriera/code/cossistant-monorepo/README.md`
+  - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/(root)/what.mdx`
+  - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/support-component/index.mdx`
+- Tinybird is explicitly used for:
+  - inbox analytics
+  - live visitor presence
+  - live "last seen in app" enrichment
+  - Source: `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/self-host/analytics.mdx`
+- Tinybird workspace contains dedicated endpoints for:
+  - `inbox_analytics`
+  - `unique_visitors`
+  - `online_now`
+  - `visitor_presence`
+  - `presence_locations`
+  - Source: `/Users/anthonyriera/code/cossistant-monorepo/tinybird/README.md`
+- Cossistant ingests Tinybird events for:
+  - presence
+  - visitor activity
+  - page views
+  - conversation lifecycle metrics
+  - Source: `/Users/anthonyriera/code/cossistant-monorepo/apps/api/src/lib/tinybird-sdk.ts`
+- Tinybird ingestion has product-grade handling already in place:
+  - batch buffering
+  - retry logic
+  - graceful flush on shutdown
+  - Source: `/Users/anthonyriera/code/cossistant-monorepo/apps/api/src/lib/tinybird-sdk.ts`
+- Frontend access is locked down with short-lived JWTs scoped to specific Tinybird pipes and fixed `website_id` params
+  - Source: `/Users/anthonyriera/code/cossistant-monorepo/apps/api/src/lib/tinybird-jwt.ts`
+- The inbox UI surfaces Tinybird-backed analytics directly in the conversation list header and opens a live visitors overlay from there
+  - Source: `/Users/anthonyriera/code/cossistant-monorepo/apps/web/src/components/conversations-list/index.tsx`
+- The live visitors overlay combines:
+  - inbox analytics display
+  - live visitor count
+  - active visitor list
+  - page paths
+  - globe visualization with geo points
+  - Source: `/Users/anthonyriera/code/cossistant-monorepo/apps/web/src/app/(dashboard)/[websiteSlug]/overlays/live-visitors-overlay.tsx`
 
-## Issues Encountered
-| Issue | Resolution |
-|-------|------------|
-| Pre-existing dirty worktree complicates verification | Restrict edits to files required for current failures |
-| `bun fix` report truncated some diagnostics at the default limit | Rerun after the first patch set with a higher max diagnostics cap |
-| `apps/web` stale generated Next types referenced a deleted route | Removed generated `.next/types` folders and confirmed regenerated types pass later checks |
+## User-Provided Facts Approved For Use
+- Tinybird setup felt easy
+- Tinybird has been reliable
+- LLMs were useful during integration
+- Cossistant is dev-first, like Tinybird
+- Playus may be named publicly
+- Playus uses Cossistant's open API to power support inside its mobile app and a custom support dashboard
+- Playus serves `600K DAU`
+
+## Editorial Positioning
+- The story should feel like:
+  - "we wanted support data to feel live inside the product"
+- The story should not feel like:
+  - "we built a generic analytics dashboard"
+- Best emotional hook:
+  - the live globe makes presence feel immediate and human
+- Best builder hook:
+  - we wanted control over the support experience, not over a separate analytics stack
+- Best trust signal:
+  - a customer can use the API-first backend to run a custom support surface at meaningful scale
+
+## Title And Packaging
+- Final title:
+  - `How Cossistant built real-time customer support analytics and a live visitor globe with Tinybird`
+- Meta title:
+  - `How Cossistant built live support analytics with Tinybird`
+- Meta description:
+  - `How Cossistant used Tinybird to power real-time inbox analytics, live visitor presence, and a globe view for developer-first support.`
+
+## Screenshot Shortlist
+- Inbox analytics strip in the inbox header with live visitors count and support metrics
+- Live visitors overlay showing:
+  - globe
+  - active visitors list
+  - page paths
+- Optional visitor detail panel if it clearly reinforces presence and context
+- Playus custom support UI if the team wants to show the API-first angle visually
+
+## Fact Check Log
+| Claim | Source | Verification Status |
+|------|--------|---------------------|
+| Cossistant is open source and code-first | `/README.md` and `/apps/web/content/blog/introducing-cossistant.mdx` | verified |
+| Cossistant is API-driven and provides backend infrastructure | `/README.md` | verified |
+| Cossistant offers headless support primitives and custom builds | `/apps/web/content/docs/(root)/what.mdx` and `/apps/web/content/docs/support-component/index.mdx` | verified |
+| Tinybird powers inbox analytics and live visitor presence | `/apps/web/content/docs/self-host/analytics.mdx` | verified |
+| Tinybird endpoints include inbox analytics, online now, visitor presence, and geo presence locations | `/tinybird/README.md` | verified |
+| Frontend Tinybird access uses short-lived JWTs scoped by website and pipe | `/apps/api/src/lib/tinybird-jwt.ts` | verified |
+| Live visitors overlay includes a globe and visitor list | `/apps/web/src/app/(dashboard)/[websiteSlug]/overlays/live-visitors-overlay.tsx` | verified |
+| Playus uses the open API and serves `600K DAU` | user instruction in this thread | approved user-provided fact |
+| LLMs were useful during integration | user instruction in this thread | approved user-provided fact |
+| Cossistant is part of the Vercel OSS program | `/Users/anthonyriera/code/cossistant-monorepo/README.md` | verified |
+
+## Things To Avoid In The Draft
+- No fabricated cost savings
+- No fabricated latency numbers
+- No claim that Playus DAU was verified from public sources
+- No generic "data platform" filler
+- No overexplaining Tinybird internals when the user-facing product benefit is enough
 
 ## Resources
-- `/Users/anthonyriera/code/cossistant-monorepo/package.json`
-- `/Users/anthonyriera/code/cossistant-monorepo/turbo.json`
-- `/Users/anthonyriera/code/cossistant-monorepo/task_plan.md`
-
-## Visual/Browser Findings
-- None
+- Tinybird example URLs:
+  - `https://www.tinybird.co/customer-stories/maple`
+  - `https://www.tinybird.co/customer-stories/orderediting`
+  - `https://www.tinybird.co/customer-stories/fever`
+  - `https://www.tinybird.co/customer-stories/marc-lou`
+  - `https://www.tinybird.co/customer-stories/plain`
+- Key local files:
+  - `/Users/anthonyriera/code/cossistant-monorepo/README.md`
+  - `/Users/anthonyriera/code/cossistant-monorepo/tinybird/README.md`
+  - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/self-host/analytics.mdx`
+  - `/Users/anthonyriera/code/cossistant-monorepo/apps/api/src/lib/tinybird-sdk.ts`
+  - `/Users/anthonyriera/code/cossistant-monorepo/apps/api/src/lib/tinybird-jwt.ts`
+  - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/src/components/conversations-list/index.tsx`
+  - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/src/app/(dashboard)/[websiteSlug]/overlays/live-visitors-overlay.tsx`

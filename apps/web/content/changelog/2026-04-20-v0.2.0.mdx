@@ -1,0 +1,74 @@
+---
+version: "0.2.0"
+description: "Script tag embeds, automatic shadcn theming, and AI knowledge clarification"
+tiny-excerpt: "Script embeds and AI clarification"
+date: "2026-04-20"
+author: "Cossistant Team"
+---
+
+Major improvements to widget flexibility with script tag embeds, automatic theme detection, and smarter AI knowledge handling.
+
+### Highlights
+
+- <HighlightLine variant="new">
+    **Script tag embeds**: Install Cossistant via CDN without React using a simple script tag.
+  </HighlightLine>
+- <HighlightLine variant="new">
+    **Auto shadcn detection**: Widget automatically inherits your shadcn theme variables.
+  </HighlightLine>
+- <HighlightLine variant="new">
+    **Knowledge clarification**: AI asks for clarification when it spots knowledge gaps.
+  </HighlightLine>
+
+### Support Widget
+
+- <HighlightLine variant="new">
+    **Browser package**: New `@cossistant/browser` package for non-React apps via script tag.
+  </HighlightLine>
+- <HighlightLine variant="updated">
+    **Theme detection**: Automatically detects and uses shadcn CSS variables when present.
+  </HighlightLine>
+- <HighlightLine variant="updated">
+    **Modular core**: Refactored widget architecture for better customization and reusability.
+  </HighlightLine>
+
+### Dashboard
+
+- <HighlightLine variant="new">
+    **Knowledge clarification requests**: Review and respond to AI knowledge gap requests.
+  </HighlightLine>
+- <HighlightLine variant="new">
+    **Visitor geolocation**: Enhanced visitor detail pages with location data.
+  </HighlightLine>
+- <HighlightLine variant="updated">
+    **Conversation timeline**: Improved timeline UI with better loading states.
+  </HighlightLine>
+
+### Bug Fixes & Improvements
+
+- <HighlightLine variant="fixed">
+    **AI reliability**: More consistent AI agent responses with improved error handling.
+  </HighlightLine>
+- <HighlightLine variant="fixed">
+    **Vite support**: Better compatibility with Vite-based projects.
+  </HighlightLine>
+- <HighlightLine variant="fixed">
+    **Timeline rendering**: Fixed conversation timeline schema mismatches.
+  </HighlightLine>
+
+### Upgrade
+
+```bash
+npm install @cossistant/react@0.2.0 @cossistant/next@0.2.0
+```
+
+### Example
+
+```html showLineNumbers
+<!-- Script tag embed (no React required) -->
+<script 
+  src="https://cdn.cossistant.com/widget/v0.2.0/cossistant.min.js"
+  data-project-id="your-project-id"
+  data-theme="auto"
+></script>
+```
