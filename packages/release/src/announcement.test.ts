@@ -5,6 +5,7 @@ import fs from "fs-extra";
 import {
 	type AnnouncementContext,
 	appendAnnouncementMarker,
+	buildXOAuth1,
 	loadChangelogRelease,
 	prepareStoredDiscordAnnouncement,
 	prepareStoredXAnnouncement,
@@ -400,5 +401,39 @@ Release summary.
 		expect(result.results[1]?.message).toContain(
 			"Skipped because the changelog frontmatter is empty"
 		);
+	});
+
+	it("builds OAuth1 auth with the X dashboard consumer env vars", () => {
+		const oauth1 = buildXOAuth1({
+			X_CONSUMER_KEY: "consumer-key",
+			X_CONSUMER_KEY_SECRET: "consumer-secret",
+			X_ACCESS_TOKEN: "access-token",
+			X_ACCESS_TOKEN_SECRET: "access-token-secret",
+		});
+		const config = (oauth1 as any).config as {
+			apiKey: string;
+			apiSecret: string;
+			callback: string;
+			accessToken: string;
+			accessTokenSecret: string;
+		};
+
+		expect(config).toEqual({
+			apiKey: "consumer-key",
+			apiSecret: "consumer-secret",
+			callback: "oob",
+			accessToken: "access-token",
+			accessTokenSecret: "access-token-secret",
+		});
+	});
+
+	it("reports missing X consumer env vars with the renamed keys", () => {
+		expect(() =>
+			buildXOAuth1({
+				X_CONSUMER_KEY: "consumer-key",
+				X_ACCESS_TOKEN: "access-token",
+				X_ACCESS_TOKEN_SECRET: "access-token-secret",
+			})
+		).toThrow("X_CONSUMER_KEY_SECRET environment variable is required.");
 	});
 });

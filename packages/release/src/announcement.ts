@@ -578,17 +578,23 @@ export async function publishXAnnouncement(
 	announcement: string,
 	environment: Record<string, string | undefined>
 ): Promise<void> {
-	const oauth1 = new OAuth1({
-		apiKey: getRequiredEnv(environment, "X_API_KEY"),
-		apiSecret: getRequiredEnv(environment, "X_API_SECRET"),
+	const client = new Client({
+		oauth1: buildXOAuth1(environment),
+	});
+	await client.posts.create({
+		text: announcement,
+	});
+}
+
+export function buildXOAuth1(
+	environment: Record<string, string | undefined>
+): OAuth1 {
+	return new OAuth1({
+		apiKey: getRequiredEnv(environment, "X_CONSUMER_KEY"),
+		apiSecret: getRequiredEnv(environment, "X_CONSUMER_KEY_SECRET"),
 		callback: "oob",
 		accessToken: getRequiredEnv(environment, "X_ACCESS_TOKEN"),
 		accessTokenSecret: getRequiredEnv(environment, "X_ACCESS_TOKEN_SECRET"),
-	});
-
-	const client = new Client({ oauth1 });
-	await client.posts.create({
-		text: announcement,
 	});
 }
 
