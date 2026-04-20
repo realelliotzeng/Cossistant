@@ -96,7 +96,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
 The widget does not inject styles automatically. Import one CSS entrypoint at the app root.
 Use `support.css` when your app already runs Tailwind CSS v4. Use `styles.css` everywhere else.
-Both entrypoints share the same widget theme behavior, and both will automatically pick up common shadcn-style host tokens like `--background`, `--primary`, `--radius`, and `--font-sans` when they exist.
+Both entrypoints share the same widget theme behavior. If your app already exposes standard shadcn-style tokens, the widget will usually pick up colors, radius, fonts, and dark mode automatically. No extra theme mapping is needed to start.
 
 <Tabs defaultValue="plain" className="mt-6">
   <TabsList>

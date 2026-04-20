@@ -394,6 +394,7 @@ Required implementation:
 5. Import widget CSS:
    - If global CSS already contains '@import "tailwindcss";', add '@import "${guide.packageName}/support.css";'
    - Otherwise import '${guide.packageName}/styles.css' in the root entry/layout file.
+   - If the app already exposes standard shadcn-style tokens, do not add extra widget theme mapping unless the user asks for explicit overrides.
 6. Render <Support /> in a real page.
 7. Add optional visitor identification for logged-in users using <IdentifySupportVisitor />.
 8. Add custom welcome messages using <SupportConfig defaultMessages={defaultMessages} quickOptions={quickOptions} /> with typed DefaultMessage[] and SenderType values.

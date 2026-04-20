@@ -31,7 +31,13 @@ You can make the widget feel like part of your product without replacing any com
 
 - the default widget shape is good and you mainly need branding
 - you want a copy-paste way to set colors and radius
-- you want the widget to follow your app theme or force light or dark mode
+- you want the widget to follow your app theme or force dark mode
+
+## Pick the simplest path
+
+In many Tailwind + shadcn apps, the widget already feels native after you import the CSS entrypoint. Start with the smallest option that matches what you need.
+
+<ThemeScenarios />
 
 ## Theme precedence
 
@@ -43,11 +49,17 @@ The widget resolves theme values in this order:
 
 That means the widget will already feel closer to your app in many setups before you write any extra theme CSS.
 
-## Works automatically with shadcn-style tokens
+<StyleTokenCascade />
 
-If your app already exposes the usual shadcn-style tokens on `:root` and `.dark`, the widget picks them up automatically. You do not need to mirror them into `--co-theme-*` just to get started.
+## Do nothing in many shadcn apps
 
-The default widget looks for these host tokens:
+If your app already exposes the usual shadcn-style tokens on `:root` and `.dark`, the widget picks them up automatically. No extra theme mapping is needed to start.
+
+Render `<Support />`, import either `support.css` or `styles.css`, and see how far the automatic host theme gets you before you add overrides.
+
+## What gets inherited automatically
+
+The default widget looks for these host tokens today:
 
 - `--background`
 - `--foreground`
@@ -72,7 +84,14 @@ The default widget looks for these host tokens:
 
 Dark mode follows your app automatically too. The widget checks for `.dark` on an ancestor or `data-color-scheme="dark"` on the widget root.
 
-## Smallest working override
+This automatic adoption is intentionally scoped to standard shadcn-style base tokens:
+
+- colors
+- radius
+- fonts
+- dark mode
+
+## Pin widget values
 
 Set the widget tokens once and keep the default UI.
 
@@ -89,9 +108,7 @@ Set the widget tokens once and keep the default UI.
 
 That is usually enough when you want to pin the widget to your own values instead of relying on the host tokens.
 
-## Common variants
-
-### Force light or dark mode
+## Force dark mode
 
 ```tsx
 import { Support } from "@cossistant/react";
@@ -99,9 +116,11 @@ import { Support } from "@cossistant/react";
 <Support theme="dark" />;
 ```
 
-By default, the widget follows your app theme. It checks for `.dark` or `data-color-scheme="dark"` on parent elements.
+By default, the widget follows your app theme. Use `theme="dark"` when the widget should stay dark instead of following the page theme.
 
-### Pin the widget to your shadcn tokens
+## Pin the widget to your shadcn tokens
+
+This is still useful when you want the widget theme to stay explicitly linked to your app tokens, even if you later rename or swap the host token source.
 
 ```css
 :root {
@@ -114,8 +133,6 @@ By default, the widget follows your app theme. It checks for `.dark` or `data-co
 }
 ```
 
-This is still useful when you want the widget theme to stay explicitly linked to your app tokens, even if you later rename or swap the host token source.
-
 ## What is not inherited automatically
 
 The widget inherits CSS design tokens, radius, fonts, and dark mode. It does not inherit arbitrary compile-time Tailwind config such as:
@@ -124,6 +141,8 @@ The widget inherits CSS design tokens, radius, fonts, and dark mode. It does not
 - custom shadow scales
 - custom plugin utilities
 - unrelated utility renames or variants
+
+If your app uses custom token names outside the standard shadcn-style base tokens, map them explicitly into `--co-theme-*`.
 
 ## When to stop here
 

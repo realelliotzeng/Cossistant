@@ -7,6 +7,8 @@ import {
 	ComponentPreview as DocsComponentPreview,
 	resolveDocsPreviewName,
 } from "@/app/(lander-docs)/components/docs/component-preview";
+import StyleTokenCascade from "@/app/(lander-docs)/components/docs/style-token-cascade";
+import ThemeScenarios from "@/app/(lander-docs)/components/docs/theme-scenarios";
 import { ComponentPreviewTabs } from "@/components/component-preview-tabs";
 import SupportBubbleAndHomeDemo from "@/components/support/demo-bubble-and-home";
 import SupportClassicBubbleDemo from "@/components/support/demo-classic-bubble";
@@ -316,21 +318,66 @@ describe("support docs examples", () => {
 
 	it("adds square color swatches to the theme token tables", () => {
 		const themeDoc = readFileSync(path.join(docsRoot, "theme.mdx"), "utf8");
+		const quickstartDoc = readFileSync(
+			path.resolve(import.meta.dir, "../../content/docs/quickstart/index.mdx"),
+			"utf8"
+		);
+		const reactQuickstartDoc = readFileSync(
+			path.resolve(import.meta.dir, "../../content/docs/quickstart/react.mdx"),
+			"utf8"
+		);
+		const integrationGuide = readFileSync(
+			path.resolve(import.meta.dir, "../lib/support-integration-guide.ts"),
+			"utf8"
+		);
 
 		expect(themeDoc).toContain("export function ColorSwatch");
 		expect(themeDoc).toContain(
 			'className="inline-block size-4 border border-dashed border-border align-middle"'
 		);
 		expect(themeDoc).toContain('<ColorSwatch value="oklch(99% 0 0)" />');
+		expect(themeDoc).toContain("## Pick the simplest path");
+		expect(themeDoc).toContain("<ThemeScenarios />");
 		expect(themeDoc).toContain("## Theme precedence");
-		expect(themeDoc).toContain(
-			"## Works automatically with shadcn-style tokens"
-		);
+		expect(themeDoc).toContain("<StyleTokenCascade />");
+		expect(themeDoc).toContain("## Do nothing in many shadcn apps");
+		expect(themeDoc).toContain("No extra theme mapping is needed to start.");
+		expect(themeDoc).toContain("## What gets inherited automatically");
 		expect(themeDoc).toContain("### Status colors");
 		expect(themeDoc).toContain("### Avatar accents");
 		expect(themeDoc).toContain("### Background shades");
 		expect(themeDoc).toContain("--co-theme-radius: 0px;");
 		expect(themeDoc).toContain("custom spacing scales");
+		expect(themeDoc).toContain(
+			"If your app uses custom token names outside the standard shadcn-style base tokens, map them explicitly into `--co-theme-*`."
+		);
+		expect(quickstartDoc).toContain(
+			"No extra theme mapping is needed to start."
+		);
+		expect(reactQuickstartDoc).toContain(
+			"No extra theme mapping is needed to start."
+		);
+		expect(integrationGuide).toContain(
+			"do not add extra widget theme mapping unless the user asks for explicit overrides"
+		);
+	});
+
+	it("keeps the theme visuals registered and readable", () => {
+		const mdxComponentsSource = readFileSync(docsMdxComponentsPath, "utf8");
+		const scenariosHtml = renderToStaticMarkup(<ThemeScenarios />);
+		const cascadeHtml = renderToStaticMarkup(<StyleTokenCascade />);
+
+		expect(mdxComponentsSource).toContain(
+			'import ThemeScenarios from "./theme-scenarios";'
+		);
+		expect(mdxComponentsSource).toContain("ThemeScenarios,");
+		expect(scenariosHtml).toContain("Do nothing");
+		expect(scenariosHtml).toContain("Set --co-theme-*");
+		expect(scenariosHtml).toContain("Use theme=&quot;dark&quot;");
+		expect(cascadeHtml).toContain("How the widget picks its background color");
+		expect(cascadeHtml).toContain("Widget override");
+		expect(cascadeHtml).toContain("Host app token");
+		expect(cascadeHtml).toContain("Cossistant default");
 	});
 
 	it("renders docs previews through the docs-only wrapper and support alias", async () => {

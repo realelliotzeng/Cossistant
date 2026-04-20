@@ -38,6 +38,7 @@ import { ImageZoom } from "./image-zoom";
 import { QuickstartAIPrompt } from "./quickstart-ai-prompt";
 import { ScreenshotFrame } from "./screenshot-frame";
 import StyleTokenCascade from "./style-token-cascade";
+import ThemeScenarios from "./theme-scenarios";
 
 export const mdxComponents = {
 	...defaultMdxComponents,
@@ -380,6 +381,7 @@ export const mdxComponents = {
 	AutoTypeTable,
 	TypeTable,
 	StyleTokenCascade,
+	ThemeScenarios,
 	QuickstartAIPrompt,
 	ScreenshotFrame,
 	Icon,
