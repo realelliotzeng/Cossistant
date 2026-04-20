@@ -138,10 +138,12 @@ export async function releaseCossistant(): Promise<void> {
 	// Step 5: Generate changelog with AI
 	spinner.start("Generating changelog with AI...");
 	const nextVersion = getNextVersion(lastTag, releaseType);
+	const releaseDate = new Date().toISOString().slice(0, 10);
 	let changelog = await generateChangelog({
 		commits,
 		description,
 		version: nextVersion,
+		date: releaseDate,
 		releaseType,
 		featureDetails: featureDetails.length > 0 ? featureDetails : undefined,
 	});
@@ -187,7 +189,7 @@ export async function releaseCossistant(): Promise<void> {
 	}
 
 	// Step 7: Save and release
-	const savedPath = await saveChangelog(changelog, nextVersion);
+	const savedPath = await saveChangelog(changelog, nextVersion, releaseDate);
 	console.log(kleur.green(`\nChangelog saved to: ${savedPath}`));
 
 	await runCossistantRelease(releaseType, description);

@@ -130,10 +130,12 @@ export async function releaseChangelogOnly(): Promise<void> {
 
 	// Step 5: Generate changelog with AI
 	spinner.start("Generating changelog with AI...");
+	const releaseDate = new Date().toISOString().slice(0, 10);
 	let changelog = await generateChangelog({
 		commits,
 		description,
 		version: nextVersion,
+		date: releaseDate,
 		featureDetails: featureDetails.length > 0 ? featureDetails : undefined,
 	});
 	spinner.succeed("Changelog generated");
@@ -178,7 +180,7 @@ export async function releaseChangelogOnly(): Promise<void> {
 	}
 
 	// Step 7: Save changelog and commit
-	const savedPath = await saveChangelog(changelog, nextVersion);
+	const savedPath = await saveChangelog(changelog, nextVersion, releaseDate);
 	console.log(kleur.green(`\nChangelog saved to: ${savedPath}`));
 
 	spinner.start("Committing changelog...");

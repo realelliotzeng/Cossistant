@@ -123,6 +123,8 @@ export const changelog = defineCollections({
 		version: z.string().optional(),
 		description: z.string(),
 		"tiny-excerpt": z.string().optional(),
+		"discord-announcement": z.string().optional(),
+		"x-announcement": z.string().optional(),
 		date: z.string(),
 		author: z.string(),
 	}),

@@ -32,6 +32,11 @@
   - `/Users/anthonyriera/code/cossistant-monorepo/README.md`
   - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/(root)/what.mdx`
   - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/support-component/index.mdx`
+- Cossistant's default fast path is the `<Support />` component, and the widget can be styled through Tailwind-friendly support styles and stable styling hooks
+  - Source:
+    - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/support-component/index.mdx`
+    - `/Users/anthonyriera/code/cossistant-monorepo/apps/web/content/docs/quickstart/react.mdx`
+    - `/Users/anthonyriera/code/cossistant-monorepo/packages/react/README.md`
 - Tinybird is explicitly used for:
   - inbox analytics
   - live visitor presence
@@ -111,6 +116,7 @@
 | Cossistant is open source and code-first | `/README.md` and `/apps/web/content/blog/introducing-cossistant.mdx` | verified |
 | Cossistant is API-driven and provides backend infrastructure | `/README.md` | verified |
 | Cossistant offers headless support primitives and custom builds | `/apps/web/content/docs/(root)/what.mdx` and `/apps/web/content/docs/support-component/index.mdx` | verified |
+| Cossistant ships with a `<Support />` component and can be styled with Tailwind or used in more headless ways | `/apps/web/content/docs/support-component/index.mdx`, `/apps/web/content/docs/quickstart/react.mdx`, and `/packages/react/README.md` | verified |
 | Tinybird powers inbox analytics and live visitor presence | `/apps/web/content/docs/self-host/analytics.mdx` | verified |
 | Tinybird endpoints include inbox analytics, online now, visitor presence, and geo presence locations | `/tinybird/README.md` | verified |
 | Frontend Tinybird access uses short-lived JWTs scoped by website and pipe | `/apps/api/src/lib/tinybird-jwt.ts` | verified |

@@ -49,6 +49,7 @@
   - Removed generic marketing language and heavy jargon.
   - Kept the tone founder-close and conversational.
   - Marked the Anthony quote as draft-for-approval.
+  - Refined the product wording to match repo language around `<Support />`, Tailwind styling, and headless support after follow-up user feedback.
 - Files created/modified:
   - `findings.md`
   - `tinybird-guest-post-cossistant.md`

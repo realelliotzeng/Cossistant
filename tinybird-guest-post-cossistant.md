@@ -1,20 +1,22 @@
 # How Cossistant built real-time customer support analytics and a live visitor globe with Tinybird
 
-Cossistant is an open-source, developer-first support platform for React teams. From the beginning, we wanted support data to feel alive inside the product, not like a report someone checks hours later in a separate tool.
+Cossistant is an open-source, developer-first support platform built with React. If you want the fast path, it ships as a `<Support />` component you can drop into your app. If you want more control, you can style it with Tailwind, swap pieces out, or go fully headless and build your own support experience.
+
+From the beginning, we wanted support data to feel alive inside the product, not like a report someone checks hours later in a separate tool.
 
 That meant two things had to be true. The inbox needed real-time analytics that support teams would actually look at while working. And live visitor presence needed to feel immediate enough that you could react to it, not just admire a number in a corner.
 
-Tinybird made both of those things feel much more straightforward than they could have been. Instead of building and maintaining a separate analytics stack, we got to focus on the parts users actually notice: faster insight in the inbox, live visitor presence, and a globe view that makes support feel human.
+Tinybird made both of those things feel much simpler than they had any right to be. Instead of building and maintaining a separate analytics stack, we got to focus on the parts users actually notice: faster insight in the inbox, live visitor presence, and a globe view that makes support feel human.
 
 ## About Cossistant
 
-Cossistant is an open-source chat support platform for the React ecosystem. You can ship the default support widget, or go deeper with headless components and APIs when you want the support experience to feel fully native to your product.
+Cossistant is an open-source chat support platform built with React. The quickest way in is the default `<Support />` component. You can ship that version fast, style it with Tailwind, and change the parts users see first without rebuilding everything.
 
-That flexibility matters to us because support is not one-size-fits-all anymore. Some teams want a polished widget they can drop in fast. Others want the backend, events, and APIs so they can build their own support surfaces end to end.
+If that still is not enough, you can go deeper. Cossistant also has headless building blocks and APIs for teams that want the support experience to feel fully native to their product.
 
 We are also part of the Vercel OSS program, which feels aligned with the kind of builder we care about: teams that want strong defaults, but also want to own the experience.
 
-That thread runs through the whole product: developer-first, code-first, and built for teams that want control.
+That thread runs through the whole product: developer-first, code-first, and built for people who want control.
 
 ## Problem
 
@@ -24,7 +26,7 @@ If a conversation is resolved, if AI handled it, if response times are drifting,
 
 We also wanted live presence to be more than a count. Seeing that five people are online is useful. Seeing where they are, what page they are on, and how that activity is changing in real time is much more useful.
 
-We could have stitched together our own pipeline for that. But the honest version is that this quickly turns into a side project you never meant to start. You are suddenly thinking about ingestion, retries, buffering, query endpoints, frontend-safe access, and all the small details that sit between raw events and a product surface people trust.
+We could have stitched together our own pipeline for that. But the honest version is that this turns into a side project you never meant to start. You are suddenly thinking about ingestion, retries, buffering, query endpoints, frontend-safe access, and all the small details that sit between raw events and a product surface people trust.
 
 That was never the goal. We wanted to build Cossistant, not a separate analytics company inside Cossistant.
 
@@ -45,7 +47,7 @@ At the code level, the shape of the integration matched what we needed:
 - Tinybird exposes small endpoints for the exact product surfaces we care about
 - the frontend reads them with short-lived JWTs scoped to a single website
 
-That last part mattered a lot. We wanted the product to query live analytics safely from the frontend without exposing raw credentials or opening up broader access than necessary.
+That last part mattered a lot. We wanted the product to query live analytics safely from the frontend without exposing raw credentials or opening things up more than necessary.
 
 LLMs also turned out to be genuinely useful during the integration. Part of that is just timing. But part of it is that the setup was readable and local to the codebase. Once the datasources, events, and endpoints were defined, iterating on the product around them felt natural.
 
@@ -85,11 +87,13 @@ And under the hood, the setup stays pretty clean: Tinybird gives us the live cou
 
 The default widget is important, but it is not the whole story.
 
-One of the nice side effects of building Cossistant this way is that teams are not locked into one UI. The widget is there if you want the fast path. But the backend and APIs can also power a completely custom support experience.
+One of the nice side effects of building Cossistant this way is that people are not locked into one UI. The widget is there if you want the fast path. But the backend and APIs can also power a completely custom support experience.
 
 That is exactly why the Tinybird setup mattered beyond our own dashboard. We were not just building a fixed reporting surface. We were building support infrastructure that could stay flexible.
 
 Playus is a good example. They use Cossistant's open API to power support inside their mobile app and to manage support through a custom dashboard. That is a different shape than a standard drop-in widget, and it is the kind of use case we care about supporting.
+
+That flexibility matters to us because it matches how the product is built. Start with `<Support />` if that gets you live quickly. Style it with Tailwind if you want it to feel more like your app. Go headless if you want to own the full support flow.
 
 It also makes the story more real. This is not just a neat internal build. The same API-first approach is trusted in a customer setup serving 600K DAU.
 
@@ -114,7 +118,7 @@ That let us stay focused on Cossistant itself.
 
 The bar for support products is higher now, especially for developer-first teams.
 
-People want support that feels native to the product. They want live context. They want data they can trust while they are still in the flow of work. And increasingly, they want enough flexibility to shape the experience around their own product instead of settling for the same black-box widget as everyone else.
+People want support that feels native to the product. They want live context. They want data they can trust while they are still in the flow of work. And more and more, they want enough flexibility to shape the experience around their own product instead of settling for the same black-box widget as everyone else.
 
 That is what Tinybird unlocked for us.
 

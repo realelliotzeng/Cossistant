@@ -54,6 +54,8 @@ type ChangelogFrontmatter = {
 	date: string;
 	author: string;
 	"tiny-excerpt"?: string;
+	"discord-announcement"?: string;
+	"x-announcement"?: string;
 };
 
 type BlogTagRegistryEntry = {

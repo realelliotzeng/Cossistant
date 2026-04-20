@@ -103,9 +103,10 @@ export function incrementVersion(
 
 export async function saveChangelog(
 	content: string,
-	version: string
+	version: string,
+	date?: string
 ): Promise<string> {
-	const today = new Date().toISOString().split("T")[0];
+	const today = date ?? new Date().toISOString().slice(0, 10);
 	const filename = `${today}-v${version}.mdx`;
 	const filepath = path.join(
 		process.cwd(),
