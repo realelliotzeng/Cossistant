@@ -26,11 +26,11 @@ jobs:
     if: github.repository_owner == 'cossistantcom'
     runs-on: ubuntu-latest
     env:
-      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
-      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
-      S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
-      S3_CDN_BASE_URL: ${{ vars.S3_CDN_BASE_URL }}
-      S3_REGION: ${{ vars.S3_REGION }}
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN || secrets.AWS_ROLE_ARN }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID || secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME || secrets.S3_BUCKET_NAME }}
+      S3_CDN_BASE_URL: ${{ vars.S3_CDN_BASE_URL || secrets.S3_CDN_BASE_URL }}
+      S3_REGION: ${{ vars.S3_REGION || secrets.S3_REGION }}
       WIDGET_CDN_PREFIX: widget
       WIDGET_S3_PREFIX: cdn/widget
     steps:
