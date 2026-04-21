@@ -145,6 +145,7 @@ export const realtimeSchema = {
 		conversationId: z.string(),
 		updates: z.object({
 			title: z.string().nullable().optional(),
+			titleSource: z.enum(["ai", "user"]).nullable().optional(),
 			visitorTitle: z.string().nullable().optional(),
 			visitorTitleLanguage: z.string().nullable().optional(),
 			visitorLanguage: z.string().nullable().optional(),

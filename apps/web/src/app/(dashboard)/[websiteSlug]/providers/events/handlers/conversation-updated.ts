@@ -125,6 +125,10 @@ function createHeaderUpdaterFromUpdates(
 			updatedHeader.title = updates.title;
 		}
 
+		if (updates.titleSource !== undefined) {
+			updatedHeader.titleSource = updates.titleSource;
+		}
+
 		if (updates.visitorTitle !== undefined) {
 			updatedHeader.visitorTitle = updates.visitorTitle;
 		}

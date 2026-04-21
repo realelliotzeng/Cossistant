@@ -32,7 +32,8 @@ const categorizeConversationInputSchema = z.object({
 
 export function createUpdateConversationTitleTool(ctx: PipelineToolContext) {
 	return tool({
-		description: "Set or update the conversation title.",
+		description:
+			"Set or update the internal team conversation title in the website default language.",
 		inputSchema: updateTitleInputSchema,
 		execute: async ({
 			title,
@@ -50,6 +51,11 @@ export function createUpdateConversationTitleTool(ctx: PipelineToolContext) {
 				websiteId: ctx.websiteId,
 				aiAgentId: ctx.aiAgentId,
 				title: title.trim(),
+				translationContext: {
+					websiteDefaultLanguage: ctx.websiteDefaultLanguage,
+					visitorLanguage: ctx.visitorLanguage,
+					autoTranslateEnabled: ctx.autoTranslateEnabled !== false,
+				},
 				emitTimelineEvent: false,
 			});
 			return {

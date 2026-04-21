@@ -10,11 +10,17 @@ describe("realtime-events", () => {
 			userId: null,
 			conversationId: "conv_1",
 			updates: {
+				titleSource: "ai",
 				activeClarification: {
 					requestId: "01JKCM0FJ8T8Q6W0M3Q2A1B9CD",
 					status: "retry_required",
 					topicSummary: "Clarify account deletion.",
+					engagementMode: "owner",
+					linkedConversationCount: 0,
 					question: null,
+					currentSuggestedAnswers: null,
+					currentQuestionInputMode: null,
+					currentQuestionScope: null,
 					stepIndex: 1,
 					maxSteps: 3,
 					progress: null,
@@ -28,6 +34,7 @@ describe("realtime-events", () => {
 			status: "retry_required",
 			question: null,
 		});
+		expect(payload.updates.titleSource).toBe("ai");
 	});
 
 	it("accepts clarification progress payloads on conversation updates", () => {
@@ -42,7 +49,12 @@ describe("realtime-events", () => {
 					requestId: "01JKCM0FJ8T8Q6W0M3Q2A1B9CD",
 					status: "analyzing",
 					topicSummary: "Clarify account deletion.",
+					engagementMode: "owner",
+					linkedConversationCount: 0,
 					question: null,
+					currentSuggestedAnswers: null,
+					currentQuestionInputMode: null,
+					currentQuestionScope: null,
 					stepIndex: 1,
 					maxSteps: 3,
 					progress: {

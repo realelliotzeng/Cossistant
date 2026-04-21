@@ -209,7 +209,7 @@ describe("ai-agent background worker", () => {
 		await worker.stop();
 	});
 
-	it("skips the background pipeline while the primary conversation job is still busy", async () => {
+	it("retries the background pipeline while the primary conversation job is still busy", async () => {
 		const { createAiAgentBackgroundWorker } = await modulePromise;
 		const worker = createAiAgentBackgroundWorker({
 			connectionOptions: {} as never,
@@ -219,7 +219,9 @@ describe("ai-agent background worker", () => {
 
 		for (const state of ["active", "waiting", "delayed"] as const) {
 			primaryJobState = state;
-			await runJob(buildJobData());
+			await expect(runJob(buildJobData())).rejects.toThrow(
+				"primary_pipeline_busy_retry"
+			);
 		}
 
 		expect(runBackgroundPipelineMock).not.toHaveBeenCalled();

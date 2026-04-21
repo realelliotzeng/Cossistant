@@ -110,6 +110,7 @@ async function emitConversationMetadataUpdate(
 	conversation: ConversationRecord,
 	updates: {
 		title?: string | null;
+		titleSource?: ConversationRecord["titleSource"];
 		visitorTitle?: string | null;
 		visitorTitleLanguage?: string | null;
 		visitorLanguage?: string | null;
@@ -946,6 +947,7 @@ export const conversationRouter = createTRPCRouter({
 
 			await emitConversationMetadataUpdate(responseConversation, {
 				title: responseConversation.title,
+				titleSource: responseConversation.titleSource,
 				visitorTitle: responseConversation.visitorTitle,
 				visitorTitleLanguage: responseConversation.visitorTitleLanguage,
 			});

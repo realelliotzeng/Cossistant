@@ -52,6 +52,7 @@ describe("handleConversationUpdated", () => {
 		const normalizedHeader = {
 			id: "conv-1",
 			title: "Old title",
+			titleSource: null as "ai" | "user" | null,
 			status: "open",
 			deletedAt: null,
 			priority: "normal",
@@ -90,6 +91,7 @@ describe("handleConversationUpdated", () => {
 					conversationId: "conv-1",
 					updates: {
 						title: "New title",
+						titleSource: "ai",
 						escalatedAt: "2025-01-01T00:00:00.000Z",
 						escalationReason: "Need human",
 						status: "resolved",
@@ -140,6 +142,7 @@ describe("handleConversationUpdated", () => {
 		const updatedViaCacheUpdater = updater(normalizedHeader);
 		expect(updatedViaCacheUpdater).toMatchObject({
 			title: "New title",
+			titleSource: "ai",
 			escalatedAt: "2025-01-01T00:00:00.000Z",
 			escalationReason: "Need human",
 			status: "resolved",
@@ -168,6 +171,7 @@ describe("handleConversationUpdated", () => {
 		expect(setNormalizedDataMock).toHaveBeenCalledTimes(1);
 		expect(setNormalizedDataMock.mock.calls[0]?.[0]).toMatchObject({
 			title: "New title",
+			titleSource: "ai",
 			status: "resolved",
 			priority: "urgent",
 			viewIds: ["view-1", "view-2"],
@@ -202,6 +206,7 @@ describe("handleConversationUpdated", () => {
 		const normalizedHeader = {
 			id: "conv-1",
 			title: "Old title",
+			titleSource: null as "ai" | "user" | null,
 			status: "open",
 			deletedAt: null,
 			priority: "normal",
@@ -307,6 +312,7 @@ describe("handleConversationUpdated", () => {
 		const normalizedHeader = {
 			id: "conv-1",
 			title: "Old title",
+			titleSource: null as "ai" | "user" | null,
 			status: "open",
 			deletedAt: null,
 			priority: "normal",
@@ -474,6 +480,7 @@ describe("handleConversationUpdated", () => {
 		const normalizedHeader = {
 			id: "conv-1",
 			title: "Old title",
+			titleSource: null as "ai" | "user" | null,
 			status: "open",
 			deletedAt: null,
 			priority: "normal",
@@ -512,6 +519,7 @@ describe("handleConversationUpdated", () => {
 					conversationId: "conv-1",
 					updates: {
 						title: "New locked title",
+						titleSource: "ai",
 						status: "resolved",
 					},
 					aiAgentId: "ai-1",
@@ -539,6 +547,7 @@ describe("handleConversationUpdated", () => {
 		const updatedViaCacheUpdater = updater(normalizedHeader);
 
 		expect(updatedViaCacheUpdater.title).toBe("New locked title");
+		expect(updatedViaCacheUpdater.titleSource).toBe("ai");
 		expect(updatedViaCacheUpdater.lastTimelineItem).toBeNull();
 		expect(updatedViaCacheUpdater.lastMessageTimelineItem).toBeNull();
 		expect(updatedViaCacheUpdater.lastMessageAt).toBeNull();

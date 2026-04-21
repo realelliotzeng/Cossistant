@@ -17,6 +17,7 @@ import {
 	type GenerationRuntimeResult,
 	runGenerationRuntime,
 } from "../shared/generation";
+import { BACKGROUND_ONE_SHOT_TOOL_NAMES } from "../shared/tools/background-one-shot";
 import { runBackgroundKnowledgeGapReview } from "./knowledge-gap-review";
 
 export type BackgroundPipelineInput = {
@@ -47,13 +48,70 @@ type BackgroundPipelineContext = {
 	input: BackgroundPipelineInput;
 };
 
-const BACKGROUND_TOOL_IDS: AiAgentToolId[] = [
-	"updateConversationTitle",
-	"updateSentiment",
-	"setPriority",
-	"categorizeConversation",
-	"skip",
-];
+type BackgroundIntakeReadyData = {
+	status: "ready";
+	aiAgent: NonNullable<Awaited<ReturnType<typeof getAiAgentById>>>;
+	toolAllowlist: AiAgentToolId[];
+	conversation: NonNullable<
+		Awaited<ReturnType<typeof loadConversationSeed>>["conversation"]
+	>;
+	websiteDefaultLanguage: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["websiteDefaultLanguage"];
+	visitorLanguage: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["visitorLanguage"];
+	autoTranslateEnabled: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["autoTranslateEnabled"];
+	generationEntries: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["generationEntries"];
+	conversationHistory: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["conversationHistory"];
+	visitorContext: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["visitorContext"];
+	conversationState: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["conversationState"];
+	triggerMessage: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["triggerMessage"];
+	hasLaterHumanMessage: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["hasLaterHumanMessage"];
+	hasLaterAiMessage: Awaited<
+		ReturnType<typeof loadIntakeContext>
+	>["hasLaterAiMessage"];
+	availableViews: Awaited<ReturnType<typeof listActiveWebsiteViews>>;
+};
+
+type BackgroundIntakeResult =
+	| BackgroundIntakeReadyData
+	| {
+			status: "skipped";
+			reason: string;
+	  };
+
+type BackgroundPipelineCompletionEmitter = (params: {
+	conversation?: PipelineRealtimeConversationTarget;
+	aiAgentId?: string;
+	status: "success" | "skipped" | "error";
+	action?: string | null;
+	reason?: string | null;
+}) => Promise<void>;
+
+type BackgroundPipelinePhaseMetrics = {
+	intakeMs: number;
+	analysisMs: number;
+	executionMs: number;
+};
+
+const BACKGROUND_ANALYSIS_TOOL_IDS = BACKGROUND_ONE_SHOT_TOOL_NAMES.filter(
+	(toolId) => toolId !== "requestKnowledgeClarification"
+) as readonly AiAgentToolId[];
 
 function getBackgroundToolAllowlist(
 	aiAgent: Awaited<ReturnType<typeof getAiAgentById>>
@@ -63,26 +121,22 @@ function getBackgroundToolAllowlist(
 	}
 
 	const settings = getBehaviorSettings(aiAgent);
-	const allowlist: AiAgentToolId[] = [];
+	const allowlist = BACKGROUND_ANALYSIS_TOOL_IDS.filter((toolId) => {
+		switch (toolId) {
+			case "updateConversationTitle":
+				return settings.autoGenerateTitle;
+			case "updateSentiment":
+				return settings.autoAnalyzeSentiment;
+			case "setPriority":
+				return settings.canSetPriority;
+			case "categorizeConversation":
+				return settings.autoCategorize && settings.canCategorize;
+			default:
+				return false;
+		}
+	});
 
-	if (settings.autoGenerateTitle) {
-		allowlist.push("updateConversationTitle");
-	}
-
-	if (settings.autoAnalyzeSentiment) {
-		allowlist.push("updateSentiment");
-	}
-
-	if (settings.canSetPriority) {
-		allowlist.push("setPriority");
-	}
-
-	if (settings.autoCategorize && settings.canCategorize) {
-		allowlist.push("categorizeConversation");
-	}
-
-	allowlist.push("skip");
-	return allowlist;
+	return [...allowlist, "skip"];
 }
 
 function hasBackgroundAnalysisWork(
@@ -95,66 +149,14 @@ function hasBackgroundMutation(result: GenerationRuntimeResult): boolean {
 	const mutationCounts =
 		result.mutationToolCallsByName ?? result.toolCallsByName;
 
-	return BACKGROUND_TOOL_IDS.some((toolId) => {
-		if (toolId === "skip") {
-			return false;
-		}
-
-		return (mutationCounts[toolId] ?? 0) > 0;
-	});
+	return BACKGROUND_ANALYSIS_TOOL_IDS.some(
+		(toolId) => (mutationCounts[toolId] ?? 0) > 0
+	);
 }
 
-async function runBackgroundIntake(ctx: BackgroundPipelineContext): Promise<
-	| {
-			status: "ready";
-			aiAgent: NonNullable<Awaited<ReturnType<typeof getAiAgentById>>>;
-			toolAllowlist: AiAgentToolId[];
-			modelResolution: Awaited<
-				ReturnType<typeof resolveAndPersistModel>
-			>["modelResolution"];
-			conversation: NonNullable<
-				Awaited<ReturnType<typeof loadConversationSeed>>["conversation"]
-			>;
-			websiteDefaultLanguage: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["websiteDefaultLanguage"];
-			visitorLanguage: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["visitorLanguage"];
-			autoTranslateEnabled: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["autoTranslateEnabled"];
-			decisionMessages: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["decisionMessages"];
-			generationEntries: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["generationEntries"];
-			conversationHistory: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["conversationHistory"];
-			visitorContext: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["visitorContext"];
-			conversationState: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["conversationState"];
-			triggerMessage: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["triggerMessage"];
-			hasLaterHumanMessage: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["hasLaterHumanMessage"];
-			hasLaterAiMessage: Awaited<
-				ReturnType<typeof loadIntakeContext>
-			>["hasLaterAiMessage"];
-			availableViews: Awaited<ReturnType<typeof listActiveWebsiteViews>>;
-	  }
-	| {
-			status: "skipped";
-			reason: string;
-	  }
-> {
+async function runBackgroundIntake(
+	ctx: BackgroundPipelineContext
+): Promise<BackgroundIntakeResult> {
 	const aiAgent = await getAiAgentById(ctx.db, {
 		aiAgentId: ctx.input.aiAgentId,
 	});
@@ -173,12 +175,11 @@ async function runBackgroundIntake(ctx: BackgroundPipelineContext): Promise<
 		};
 	}
 
-	const { aiAgent: resolvedAiAgent, modelResolution } =
-		await resolveAndPersistModel({
-			db: ctx.db,
-			aiAgent,
-			conversationId: ctx.input.conversationId,
-		});
+	const { aiAgent: resolvedAiAgent } = await resolveAndPersistModel({
+		db: ctx.db,
+		aiAgent,
+		conversationId: ctx.input.conversationId,
+	});
 
 	const { conversation, triggerMetadata } = await loadConversationSeed(ctx.db, {
 		conversationId: ctx.input.conversationId,
@@ -226,12 +227,10 @@ async function runBackgroundIntake(ctx: BackgroundPipelineContext): Promise<
 		status: "ready",
 		aiAgent: resolvedAiAgent,
 		toolAllowlist,
-		modelResolution,
 		conversation,
 		websiteDefaultLanguage: intakeContext.websiteDefaultLanguage,
 		visitorLanguage: intakeContext.visitorLanguage,
 		autoTranslateEnabled: intakeContext.autoTranslateEnabled,
-		decisionMessages: intakeContext.decisionMessages,
 		generationEntries: intakeContext.generationEntries,
 		conversationHistory: intakeContext.conversationHistory,
 		visitorContext: intakeContext.visitorContext,
@@ -240,6 +239,62 @@ async function runBackgroundIntake(ctx: BackgroundPipelineContext): Promise<
 		hasLaterHumanMessage: intakeContext.hasLaterHumanMessage,
 		hasLaterAiMessage: intakeContext.hasLaterAiMessage,
 		availableViews,
+	};
+}
+
+async function runBackgroundAnalysis(params: {
+	ctx: BackgroundPipelineContext;
+	intake: BackgroundIntakeReadyData;
+}): Promise<GenerationRuntimeResult> {
+	return runGenerationRuntime({
+		db: params.ctx.db,
+		pipelineKind: "background",
+		mode: "background_only",
+		aiAgent: params.intake.aiAgent,
+		conversation: params.intake.conversation,
+		websiteDefaultLanguage: params.intake.websiteDefaultLanguage,
+		visitorLanguage: params.intake.visitorLanguage,
+		autoTranslateEnabled: params.intake.autoTranslateEnabled,
+		generationEntries: params.intake.generationEntries,
+		visitorContext: params.intake.visitorContext,
+		conversationState: params.intake.conversationState,
+		humanCommand: null,
+		workflowRunId: params.ctx.input.workflowRunId,
+		triggerMessageId: params.ctx.input.sourceMessageId,
+		triggerMessageText: params.intake.triggerMessage?.content ?? null,
+		triggerMessageCreatedAt: params.ctx.input.sourceMessageCreatedAt,
+		triggerSenderType: params.intake.triggerMessage?.senderType,
+		triggerVisibility: params.intake.triggerMessage?.visibility,
+		hasLaterHumanMessage: params.intake.hasLaterHumanMessage,
+		hasLaterAiMessage: params.intake.hasLaterAiMessage,
+		allowPublicMessages: false,
+		availableViews: params.intake.availableViews.map((view) => ({
+			id: view.id,
+			name: view.name,
+			description: view.description,
+			prompt: view.prompt,
+		})),
+		toolAllowlist: params.intake.toolAllowlist,
+	});
+}
+
+function buildBackgroundPipelineResult(params: {
+	status: BackgroundPipelineResult["status"];
+	startTime: number;
+	metrics: BackgroundPipelinePhaseMetrics;
+	reason?: string;
+	error?: string;
+}): BackgroundPipelineResult {
+	return {
+		status: params.status,
+		...(params.reason ? { reason: params.reason } : {}),
+		...(params.error ? { error: params.error } : {}),
+		metrics: {
+			intakeMs: params.metrics.intakeMs,
+			analysisMs: params.metrics.analysisMs,
+			executionMs: params.metrics.executionMs,
+			totalMs: Date.now() - params.startTime,
+		},
 	};
 }
 
@@ -254,6 +309,7 @@ export async function runBackgroundPipeline(
 	const { conversationId, workflowRunId, jobId } = ctx.input;
 	let intakeMs = 0;
 	let analysisMs = 0;
+	let executionMs = 0;
 	const completionConversation: PipelineRealtimeConversationTarget = {
 		id: ctx.input.conversationId,
 		websiteId: ctx.input.websiteId,
@@ -311,48 +367,22 @@ export async function runBackgroundPipeline(
 				status: "skipped",
 				reason: intakeResult.reason,
 			});
-			return {
+			return buildBackgroundPipelineResult({
 				status: "skipped",
 				reason: intakeResult.reason,
+				startTime,
 				metrics: {
 					intakeMs,
 					analysisMs,
-					executionMs: 0,
-					totalMs: Date.now() - startTime,
+					executionMs,
 				},
-			};
+			});
 		}
 
 		const analysisStartedAt = Date.now();
-		const generationResult = await runGenerationRuntime({
-			db: ctx.db,
-			pipelineKind: "background",
-			mode: "background_only",
-			aiAgent: intakeResult.aiAgent,
-			conversation: intakeResult.conversation,
-			websiteDefaultLanguage: intakeResult.websiteDefaultLanguage,
-			visitorLanguage: intakeResult.visitorLanguage,
-			autoTranslateEnabled: intakeResult.autoTranslateEnabled,
-			generationEntries: intakeResult.generationEntries,
-			visitorContext: intakeResult.visitorContext,
-			conversationState: intakeResult.conversationState,
-			humanCommand: null,
-			workflowRunId,
-			triggerMessageId: ctx.input.sourceMessageId,
-			triggerMessageText: intakeResult.triggerMessage?.content ?? null,
-			triggerMessageCreatedAt: ctx.input.sourceMessageCreatedAt,
-			triggerSenderType: intakeResult.triggerMessage?.senderType,
-			triggerVisibility: intakeResult.triggerMessage?.visibility,
-			hasLaterHumanMessage: intakeResult.hasLaterHumanMessage,
-			hasLaterAiMessage: intakeResult.hasLaterAiMessage,
-			allowPublicMessages: false,
-			availableViews: intakeResult.availableViews.map((view) => ({
-				id: view.id,
-				name: view.name,
-				description: view.description,
-				prompt: view.prompt,
-			})),
-			toolAllowlist: intakeResult.toolAllowlist,
+		const generationResult = await runBackgroundAnalysis({
+			ctx,
+			intake: intakeResult,
 		});
 		analysisMs = Date.now() - analysisStartedAt;
 
@@ -376,18 +406,19 @@ export async function runBackgroundPipeline(
 				status: "error",
 				reason: errorMessage,
 			});
-			return {
+			return buildBackgroundPipelineResult({
 				status: "error",
 				error: errorMessage,
+				startTime,
 				metrics: {
 					intakeMs,
 					analysisMs,
-					executionMs: 0,
-					totalMs: Date.now() - startTime,
+					executionMs,
 				},
-			};
+			});
 		}
 
+		const executionStartedAt = Date.now();
 		const knowledgeGapReviewResult = await runBackgroundKnowledgeGapReview({
 			db: ctx.db,
 			input: ctx.input,
@@ -419,15 +450,16 @@ export async function runBackgroundPipeline(
 				action: "requestKnowledgeClarification",
 				reason: knowledgeGapReviewResult.reason,
 			});
-			return {
+			executionMs = Date.now() - executionStartedAt;
+			return buildBackgroundPipelineResult({
 				status: "completed",
+				startTime,
 				metrics: {
 					intakeMs,
 					analysisMs,
-					executionMs: 0,
-					totalMs: Date.now() - startTime,
+					executionMs,
 				},
-			};
+			});
 		}
 
 		if (!hasBackgroundMutation(generationResult)) {
@@ -450,16 +482,17 @@ export async function runBackgroundPipeline(
 				action: generationResult.action.action,
 				reason: generationResult.action.reasoning,
 			});
-			return {
+			executionMs = Date.now() - executionStartedAt;
+			return buildBackgroundPipelineResult({
 				status: "skipped",
 				reason: generationResult.action.reasoning,
+				startTime,
 				metrics: {
 					intakeMs,
 					analysisMs,
-					executionMs: 0,
-					totalMs: Date.now() - startTime,
+					executionMs,
 				},
-			};
+			});
 		}
 
 		logAiPipeline({
@@ -481,15 +514,16 @@ export async function runBackgroundPipeline(
 			action: generationResult.action.action,
 			reason: generationResult.action.reasoning,
 		});
-		return {
+		executionMs = Date.now() - executionStartedAt;
+		return buildBackgroundPipelineResult({
 			status: "completed",
+			startTime,
 			metrics: {
 				intakeMs,
 				analysisMs,
-				executionMs: 0,
-				totalMs: Date.now() - startTime,
+				executionMs,
 			},
-		};
+		});
 	} catch (error) {
 		const message =
 			error instanceof Error ? error.message : "Background pipeline failed";
@@ -509,15 +543,15 @@ export async function runBackgroundPipeline(
 			status: "error",
 			reason: message,
 		});
-		return {
+		return buildBackgroundPipelineResult({
 			status: "error",
 			error: message,
+			startTime,
 			metrics: {
 				intakeMs,
 				analysisMs,
-				executionMs: 0,
-				totalMs: Date.now() - startTime,
+				executionMs,
 			},
-		};
+		});
 	}
 }

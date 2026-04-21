@@ -50,6 +50,10 @@ const loadConversationSeedMock = mock(async () => ({
 		organizationId: "org-1",
 		websiteId: "site-1",
 		visitorId: "visitor-1",
+		title: null as string | null,
+		titleSource: null as "ai" | "user" | null,
+		visitorTitle: null as string | null,
+		visitorTitleLanguage: null as string | null,
 	},
 	triggerMetadata: {
 		id: "msg-1",
@@ -58,6 +62,9 @@ const loadConversationSeedMock = mock(async () => ({
 	},
 }));
 const loadIntakeContextMock = mock(async () => ({
+	websiteDefaultLanguage: "en",
+	visitorLanguage: "es",
+	autoTranslateEnabled: true,
 	conversationHistory: [],
 	decisionMessages: [],
 	generationEntries: [],
@@ -215,6 +222,10 @@ describe("runBackgroundPipeline", () => {
 				organizationId: "org-1",
 				websiteId: "site-1",
 				visitorId: "visitor-1",
+				title: null as string | null,
+				titleSource: null as "ai" | "user" | null,
+				visitorTitle: null as string | null,
+				visitorTitleLanguage: null as string | null,
 			},
 			triggerMetadata: {
 				id: "msg-1",
@@ -223,6 +234,9 @@ describe("runBackgroundPipeline", () => {
 			},
 		});
 		loadIntakeContextMock.mockResolvedValue({
+			websiteDefaultLanguage: "en",
+			visitorLanguage: "es",
+			autoTranslateEnabled: true,
 			conversationHistory: [],
 			decisionMessages: [],
 			generationEntries: [],
@@ -338,6 +352,74 @@ describe("runBackgroundPipeline", () => {
 				status: "success",
 				workflowRunId: "wf-1",
 				audience: "dashboard",
+			})
+		);
+	});
+
+	it("passes multilingual title state into the background analysis runtime", async () => {
+		loadConversationSeedMock.mockResolvedValueOnce({
+			conversation: {
+				id: "conv-1",
+				organizationId: "org-1",
+				websiteId: "site-1",
+				visitorId: "visitor-1",
+				title: "Billing question",
+				titleSource: "ai",
+				visitorTitle: "Pregunta de facturacion",
+				visitorTitleLanguage: "es",
+			},
+			triggerMetadata: {
+				id: "msg-1",
+				createdAt: "2026-03-04T10:00:00.000Z",
+				conversationId: "conv-1",
+			},
+		});
+		loadIntakeContextMock.mockResolvedValueOnce({
+			websiteDefaultLanguage: "en",
+			visitorLanguage: "es",
+			autoTranslateEnabled: true,
+			conversationHistory: [],
+			decisionMessages: [],
+			generationEntries: [],
+			visitorContext: null,
+			conversationState: {
+				hasHumanAssignee: false,
+				assigneeIds: [],
+				participantIds: [],
+				isEscalated: false,
+				escalationReason: null,
+			},
+			triggerMessage: {
+				messageId: "msg-1",
+				content: "Necesito ayuda con la facturacion",
+				senderType: "visitor",
+				senderId: null,
+				senderName: null,
+				timestamp: "2026-03-04T10:00:00.000Z",
+				visibility: "public",
+			},
+			hasLaterHumanMessage: false,
+			hasLaterAiMessage: false,
+		});
+
+		const { runBackgroundPipeline } = await modulePromise;
+		const result = await runBackgroundPipeline({
+			db: {} as never,
+			input: baseInput,
+		});
+
+		expect(result.status).toBe("completed");
+		expect(runGenerationRuntimeMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				websiteDefaultLanguage: "en",
+				visitorLanguage: "es",
+				autoTranslateEnabled: true,
+				conversation: expect.objectContaining({
+					title: "Billing question",
+					titleSource: "ai",
+					visitorTitle: "Pregunta de facturacion",
+					visitorTitleLanguage: "es",
+				}),
 			})
 		);
 	});

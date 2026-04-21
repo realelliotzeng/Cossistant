@@ -171,6 +171,8 @@ const AI_AGENT_TOOL_CATALOG_RAW: readonly RawToolCatalogEntry[] = [
 - Keep titles short and issue-focused.
 - Use concrete nouns (feature, error, account area).
 - Update only when the conversation topic is clear and stable across recent messages.
+- Write the internal saved title in the website default language, not the visitor language.
+- Do not try to write the localized visitor-facing title yourself; the system manages that separately.
 - Skip vague, transitional, or generic titles.
 - Do not replace a title unless the newer title is meaningfully better.`,
 		},

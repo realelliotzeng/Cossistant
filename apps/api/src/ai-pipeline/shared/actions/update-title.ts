@@ -9,19 +9,14 @@
 import type { Database } from "@api/db";
 import type { ConversationSelect } from "@api/db/schema/conversation";
 import { conversation } from "@api/db/schema/conversation";
-import { website } from "@api/db/schema/website";
-import { getPlanForWebsite } from "@api/lib/plans/access";
-import {
-	isAutomaticTranslationEnabled,
-	syncConversationVisitorTitle,
-} from "@api/lib/translation";
+import { syncConversationVisitorTitle } from "@api/lib/translation";
 import { realtime } from "@api/realtime/emitter";
 import { createTimelineItem } from "@api/utils/timeline-item";
 import {
 	ConversationTimelineType,
 	TimelineItemVisibility,
 } from "@cossistant/types";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { loadCurrentConversation } from "./load-current-conversation";
 
 type UpdateTitleParams = {
@@ -31,6 +26,11 @@ type UpdateTitleParams = {
 	websiteId: string;
 	aiAgentId: string;
 	title: string;
+	translationContext: {
+		websiteDefaultLanguage: string;
+		visitorLanguage?: string | null;
+		autoTranslateEnabled: boolean;
+	};
 	emitTimelineEvent?: boolean;
 };
 
@@ -65,6 +65,7 @@ export async function updateTitle(params: UpdateTitleParams): Promise<{
 		websiteId,
 		aiAgentId,
 		title,
+		translationContext,
 		emitTimelineEvent = false,
 	} = params;
 
@@ -94,38 +95,43 @@ export async function updateTitle(params: UpdateTitleParams): Promise<{
 	const now = new Date().toISOString();
 
 	// Update conversation
-	await db
+	const [updatedConversation] = await db
 		.update(conversation)
 		.set({
 			title,
 			titleSource: "ai",
 			updatedAt: now,
 		})
-		.where(eq(conversation.id, currentConversation.id));
+		.where(
+			and(
+				eq(conversation.id, currentConversation.id),
+				or(isNull(conversation.titleSource), eq(conversation.titleSource, "ai"))
+			)
+		)
+		.returning({
+			id: conversation.id,
+			visitorId: conversation.visitorId,
+			titleSource: conversation.titleSource,
+		});
 
-	const websiteRecord = await db.query.website.findFirst({
-		where: eq(website.id, websiteId),
+	if (!updatedConversation) {
+		return {
+			changed: false,
+			reason: "manual_title",
+		};
+	}
+
+	const titleTranslation = await syncConversationVisitorTitle({
+		db,
+		conversationId: currentConversation.id,
+		organizationId,
+		websiteId,
+		title,
+		websiteDefaultLanguage: translationContext.websiteDefaultLanguage,
+		visitorLanguage:
+			translationContext.visitorLanguage ?? currentConversation.visitorLanguage,
+		autoTranslateEnabled: translationContext.autoTranslateEnabled,
 	});
-	const planInfo = websiteRecord
-		? await getPlanForWebsite(websiteRecord)
-		: null;
-	const titleTranslation =
-		websiteRecord && planInfo
-			? await syncConversationVisitorTitle({
-					db,
-					conversationId: currentConversation.id,
-					organizationId,
-					websiteId,
-					title,
-					websiteDefaultLanguage: websiteRecord.defaultLanguage,
-					visitorLanguage: currentConversation.visitorLanguage,
-					autoTranslateEnabled: isAutomaticTranslationEnabled({
-						planAllowsAutoTranslate:
-							planInfo.features["auto-translate"] === true,
-						websiteAutoTranslateEnabled: websiteRecord.autoTranslateEnabled,
-					}),
-				})
-			: { visitorTitle: null, visitorTitleLanguage: null };
 
 	if (emitTimelineEvent) {
 		const eventText = isUpdate
@@ -152,11 +158,12 @@ export async function updateTitle(params: UpdateTitleParams): Promise<{
 	await realtime.emit("conversationUpdated", {
 		websiteId,
 		organizationId,
-		visitorId: currentConversation.visitorId,
+		visitorId: updatedConversation.visitorId,
 		userId: null,
 		conversationId: currentConversation.id,
 		updates: {
 			title,
+			titleSource: updatedConversation.titleSource ?? "ai",
 			visitorTitle: titleTranslation.visitorTitle,
 			visitorTitleLanguage: titleTranslation.visitorTitleLanguage,
 		},

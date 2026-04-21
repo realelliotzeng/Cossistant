@@ -13,6 +13,13 @@ type MockConversationState = {
 const realtimeEmitMock = mock(async () => {});
 const createTimelineItemMock = mock(async () => {});
 const createConversationEventMock = mock(async () => {});
+const syncConversationVisitorTitleMock = mock((async () => ({
+	visitorTitle: null,
+	visitorTitleLanguage: null,
+})) as (...args: unknown[]) => Promise<{
+	visitorTitle: string | null;
+	visitorTitleLanguage: string | null;
+}>);
 const loadCurrentConversationMock = mock(
 	(async (): Promise<MockConversationState | null> => null) as (
 		...args: unknown[]
@@ -33,6 +40,10 @@ mock.module("@api/utils/conversation-event", () => ({
 	createConversationEvent: createConversationEventMock,
 }));
 
+mock.module("@api/lib/translation", () => ({
+	syncConversationVisitorTitle: syncConversationVisitorTitleMock,
+}));
+
 mock.module("./load-current-conversation", () => ({
 	loadCurrentConversation: loadCurrentConversationMock,
 }));
@@ -45,9 +56,9 @@ const modulePromise = Promise.all([
 
 function createDbMock() {
 	const returningMock = mock(
-		(async (): Promise<Array<{ id: string; priority: string }>> => []) as (
+		(async (): Promise<Record<string, unknown>[]> => []) as (
 			...args: unknown[]
-		) => Promise<Array<{ id: string; priority: string }>>
+		) => Promise<Record<string, unknown>[]>
 	);
 	const whereMock = mock(() => ({
 		returning: returningMock,
@@ -71,15 +82,26 @@ function createDbMock() {
 }
 
 describe("metadata update actions", () => {
+	const translationContext = {
+		websiteDefaultLanguage: "en",
+		visitorLanguage: "es",
+		autoTranslateEnabled: true,
+	} as const;
+
 	beforeEach(() => {
 		realtimeEmitMock.mockReset();
 		createTimelineItemMock.mockReset();
 		createConversationEventMock.mockReset();
+		syncConversationVisitorTitleMock.mockReset();
 		loadCurrentConversationMock.mockReset();
 
 		realtimeEmitMock.mockResolvedValue(undefined);
 		createTimelineItemMock.mockResolvedValue(undefined);
 		createConversationEventMock.mockResolvedValue(undefined);
+		syncConversationVisitorTitleMock.mockResolvedValue({
+			visitorTitle: null,
+			visitorTitleLanguage: null,
+		});
 		loadCurrentConversationMock.mockResolvedValue({
 			id: "conv-1",
 			visitorId: "visitor-1",
@@ -112,6 +134,7 @@ describe("metadata update actions", () => {
 			websiteId: "site-1",
 			aiAgentId: "ai-1",
 			title: "  billing   issue  ",
+			translationContext,
 		});
 
 		expect(loadCurrentConversationMock).toHaveBeenCalledWith(db, "conv-1");
@@ -142,6 +165,7 @@ describe("metadata update actions", () => {
 			websiteId: "site-1",
 			aiAgentId: "ai-1",
 			title: "AI title",
+			translationContext,
 		});
 
 		expect(result).toEqual({
@@ -212,7 +236,7 @@ describe("metadata update actions", () => {
 
 	it("does not rewrite the title on a second call when the caller snapshot is stale", async () => {
 		const [{ updateTitle }] = await modulePromise;
-		const { db, updateMock } = createDbMock();
+		const { db, updateMock, returningMock } = createDbMock();
 
 		loadCurrentConversationMock
 			.mockResolvedValueOnce({
@@ -227,6 +251,13 @@ describe("metadata update actions", () => {
 				title: "Help with billing",
 				titleSource: "ai",
 			});
+		returningMock.mockResolvedValueOnce([
+			{
+				id: "conv-1",
+				visitorId: "visitor-1",
+				titleSource: "ai",
+			},
+		]);
 
 		await updateTitle({
 			db: db as never,
@@ -240,6 +271,7 @@ describe("metadata update actions", () => {
 			websiteId: "site-1",
 			aiAgentId: "ai-1",
 			title: "Help with billing",
+			translationContext,
 		});
 		const secondResult = await updateTitle({
 			db: db as never,
@@ -253,12 +285,113 @@ describe("metadata update actions", () => {
 			websiteId: "site-1",
 			aiAgentId: "ai-1",
 			title: "Help with billing",
+			translationContext,
 		});
 
 		expect(updateMock).toHaveBeenCalledTimes(1);
 		expect(secondResult).toEqual({
 			changed: false,
 			reason: "unchanged",
+		});
+	});
+
+	it("does not overwrite a title that became user-owned between read and write", async () => {
+		const [{ updateTitle }] = await modulePromise;
+		const { db, updateMock, returningMock } = createDbMock();
+
+		loadCurrentConversationMock.mockResolvedValueOnce({
+			id: "conv-1",
+			visitorId: "visitor-1",
+			title: "AI draft",
+			titleSource: "ai",
+		});
+		returningMock.mockResolvedValueOnce([]);
+
+		const result = await updateTitle({
+			db: db as never,
+			conversation: {
+				id: "conv-1",
+				visitorId: "visitor-1",
+				title: "AI draft",
+				titleSource: "ai",
+			} as never,
+			organizationId: "org-1",
+			websiteId: "site-1",
+			aiAgentId: "ai-1",
+			title: "User-owned title",
+			translationContext,
+		});
+
+		expect(updateMock).toHaveBeenCalledTimes(1);
+		expect(result).toEqual({
+			changed: false,
+			reason: "manual_title",
+		});
+		expect(syncConversationVisitorTitleMock).not.toHaveBeenCalled();
+		expect(realtimeEmitMock).not.toHaveBeenCalled();
+	});
+
+	it("syncs visitor-facing title data from precomputed translation context", async () => {
+		const [{ updateTitle }] = await modulePromise;
+		const { db, returningMock } = createDbMock();
+
+		loadCurrentConversationMock.mockResolvedValueOnce({
+			id: "conv-1",
+			visitorId: "visitor-1",
+			title: null,
+			titleSource: null,
+		});
+		returningMock.mockResolvedValueOnce([
+			{
+				id: "conv-1",
+				visitorId: "visitor-1",
+				titleSource: "ai",
+			},
+		]);
+		syncConversationVisitorTitleMock.mockResolvedValueOnce({
+			visitorTitle: "Pregunta de facturacion",
+			visitorTitleLanguage: "es",
+		});
+
+		const result = await updateTitle({
+			db: db as never,
+			conversation: {
+				id: "conv-1",
+				visitorId: "visitor-1",
+				title: null,
+				titleSource: null,
+			} as never,
+			organizationId: "org-1",
+			websiteId: "site-1",
+			aiAgentId: "ai-1",
+			title: "Billing question",
+			translationContext,
+		});
+
+		expect(result).toEqual({ changed: true });
+		expect(syncConversationVisitorTitleMock).toHaveBeenCalledWith({
+			db,
+			conversationId: "conv-1",
+			organizationId: "org-1",
+			websiteId: "site-1",
+			title: "Billing question",
+			websiteDefaultLanguage: "en",
+			visitorLanguage: "es",
+			autoTranslateEnabled: true,
+		});
+		expect(realtimeEmitMock).toHaveBeenCalledWith("conversationUpdated", {
+			websiteId: "site-1",
+			organizationId: "org-1",
+			visitorId: "visitor-1",
+			userId: null,
+			conversationId: "conv-1",
+			updates: {
+				title: "Billing question",
+				titleSource: "ai",
+				visitorTitle: "Pregunta de facturacion",
+				visitorTitleLanguage: "es",
+			},
+			aiAgentId: "ai-1",
 		});
 	});
 

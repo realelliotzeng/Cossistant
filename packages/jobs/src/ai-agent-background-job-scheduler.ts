@@ -3,10 +3,16 @@ import type { AiAgentBackgroundJobData } from "./types";
 import { generateAiAgentBackgroundJobId } from "./types";
 
 export const AI_AGENT_BACKGROUND_DELAY_MS = 30_000;
+export const AI_AGENT_BACKGROUND_RETRY_ATTEMPTS = 4;
+export const AI_AGENT_BACKGROUND_RETRY_BACKOFF_MS = 15_000;
 
 export const AI_AGENT_BACKGROUND_JOB_OPTIONS: JobsOptions = {
 	delay: AI_AGENT_BACKGROUND_DELAY_MS,
-	attempts: 1,
+	attempts: AI_AGENT_BACKGROUND_RETRY_ATTEMPTS,
+	backoff: {
+		type: "exponential",
+		delay: AI_AGENT_BACKGROUND_RETRY_BACKOFF_MS,
+	},
 	removeOnComplete: true,
 	removeOnFail: true,
 };

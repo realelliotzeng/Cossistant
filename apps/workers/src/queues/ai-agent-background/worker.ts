@@ -15,6 +15,17 @@ type WorkerConfig = {
 	redisUrl: string;
 };
 
+const PRIMARY_PIPELINE_BUSY_RETRY_MESSAGE = "primary_pipeline_busy_retry";
+
+class PrimaryPipelineBusyRetryError extends Error {
+	constructor(conversationId: string) {
+		super(
+			`${PRIMARY_PIPELINE_BUSY_RETRY_MESSAGE}: conversation=${conversationId}`
+		);
+		this.name = "PrimaryPipelineBusyRetryError";
+	}
+}
+
 export function createAiAgentBackgroundWorker({
 	connectionOptions,
 	redisUrl,
@@ -51,10 +62,7 @@ export function createAiAgentBackgroundWorker({
 		job: Job<AiAgentBackgroundJobData>
 	): Promise<void> {
 		if (await isPrimaryPipelineBusy(job.data.conversationId)) {
-			console.log(
-				`[worker:ai-agent-background] Skipping ${job.id ?? "unknown-job"}: primary_pipeline_busy`
-			);
-			return;
+			throw new PrimaryPipelineBusyRetryError(job.data.conversationId);
 		}
 
 		const result = await runBackgroundPipeline({
@@ -97,6 +105,16 @@ export function createAiAgentBackgroundWorker({
 			);
 
 			worker.on("failed", (job, error) => {
+				if (
+					error instanceof Error &&
+					error.message.startsWith(PRIMARY_PIPELINE_BUSY_RETRY_MESSAGE)
+				) {
+					console.log(
+						`[worker:ai-agent-background] Retrying ${job?.id ?? "unknown-job"}: primary_pipeline_busy`
+					);
+					return;
+				}
+
 				console.error(
 					`[worker:ai-agent-background] Job ${job?.id} failed`,
 					error

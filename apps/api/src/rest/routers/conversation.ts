@@ -471,6 +471,7 @@ async function emitPrivateConversationUpdate(
 		deletedAt?: string | null;
 		aiPausedUntil?: string | null;
 		title?: string | null;
+		titleSource?: ConversationRecord["titleSource"];
 		visitorTitle?: string | null;
 		visitorTitleLanguage?: string | null;
 	}
@@ -1924,6 +1925,7 @@ conversationRouter.openapi(
 
 		await emitPrivateConversationUpdate(responseConversation, {
 			title: responseConversation.title,
+			titleSource: responseConversation.titleSource,
 			visitorTitle: responseConversation.visitorTitle,
 			visitorTitleLanguage: responseConversation.visitorTitleLanguage,
 		});

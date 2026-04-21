@@ -82,6 +82,14 @@ visibility=${input.triggerVisibility ?? "unknown"}
 text=${input.triggerMessageText?.trim() || "(empty)"}`;
 }
 
+function buildConversationTitleStage(input: GenerationRuntimeInput): string {
+	return `## Conversation Title State
+internalTitle=${input.conversation.title?.trim() || "none"}
+internalTitleSource=${input.conversation.titleSource ?? "none"}
+visitorTitle=${input.conversation.visitorTitle?.trim() || "none"}
+visitorTitleLanguage=${input.conversation.visitorTitleLanguage ?? "none"}`;
+}
+
 function buildTimelineSemanticsStage(): string {
 	return `## Timeline Semantics
 Messages are labeled with [BEFORE], [TRIGGER], or [AFTER].
@@ -103,11 +111,15 @@ function buildLanguagePolicyStage(input: GenerationRuntimeInput): string {
 - The website default language is ${input.websiteDefaultLanguage}. Use it for internal reasoning, knowledge-base searches, and query rewriting.
 - The visitor's language is ${visitorLanguage}.
 - Always answer the visitor in the visitor's language when it is known.
+- If you call updateConversationTitle, write the saved internal conversation.title in ${input.websiteDefaultLanguage} only.
+- Never localize the internal title yourself. The system derives visitorTitle separately for the visitor-facing language.
 - Never switch knowledge-base search to the visitor language unless the website language search fails and you explicitly need a rewrite.`
 		: `## Language Policy
 - Auto-translate is disabled for this website.
 - The website default language is ${input.websiteDefaultLanguage}. Use it for internal reasoning, knowledge-base searches, and visitor-facing replies.
 - The visitor's language is ${visitorLanguage}.
+- If you call updateConversationTitle, write the saved internal conversation.title in ${input.websiteDefaultLanguage} only.
+- Do not try to create a separate localized title. Leave visitorTitle derivation to the system.
 - Do not switch the reply language just because the visitor speaks another language unless a human explicitly instructs you to do so.
 - Keep knowledge-base search in the website default language.`;
 }
@@ -193,6 +205,7 @@ export function buildGenerationSystemPrompt(params: {
 		...buildCorePromptStages(params.promptBundle),
 		buildContextFactsStage(params.input),
 		buildCurrentTriggerStage(params.input),
+		buildConversationTitleStage(params.input),
 		buildTimelineSemanticsStage(),
 		buildLanguagePolicyStage(params.input),
 		buildAvailableViewsStage(params.input),

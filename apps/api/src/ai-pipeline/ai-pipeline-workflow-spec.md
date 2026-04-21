@@ -19,7 +19,7 @@ Real-time conversation handling for the active exchange:
 Delayed, non-public follow-up pipeline:
 
 - scheduled after primary completion,
-- debounced per conversation with a 60s delay,
+- debounced per conversation with a 30s delay,
 - currently implemented as a shell/no-op pipeline (triage logic intentionally deferred).
 
 ## 2) Runtime Entry Points
@@ -64,7 +64,7 @@ Delayed, non-public follow-up pipeline:
   - `websiteId`
   - `organizationId`
   - `aiAgentId`
-- Delay: `60_000ms`
+- Delay: `30_000ms`
 
 ### 3.3 Redis Run Cursor (Primary)
 
@@ -91,7 +91,7 @@ Updated after each successfully handled primary message (`completed` or `skipped
    - create delayed job (`status: "created"`).
 2. Existing `delayed` or `waiting` job:
    - remove existing,
-   - add fresh delayed job (60s),
+   - add fresh delayed job (30s),
    - return `status: "rescheduled"`.
 3. Existing `active` job:
    - do not interrupt,
@@ -109,7 +109,7 @@ Background scheduling is triggered from primary worker completion hook:
 
 1. Primary run completes (not failed).
 2. Primary processed at least one message (`processedMessageCount > 0`).
-3. Worker schedules `ai-agent-background` with `delayMs = 60_000`.
+3. Worker schedules `ai-agent-background` with `delayMs = 30_000`.
 
 Notes:
 
@@ -129,7 +129,7 @@ Notes:
 4. Primary pipeline returns `completed|skipped|error` per message.
 5. Primary worker advances DB cursor for handled messages.
 6. Primary completion hook maintains primary cursor semantics (immediate follow-up if needed).
-7. Primary completion hook schedules background queue (60s) when processed message count > 0.
+7. Primary completion hook schedules background queue (30s) when processed message count > 0.
 8. Background worker executes background pipeline shell on delayed trigger.
 
 ## 7) Sequence Diagrams
@@ -146,20 +146,20 @@ sequenceDiagram
     Q1->>W1: process primary job
     W1->>P1: runPrimaryPipeline (window messages)
     P1-->>W1: completed/skipped
-    W1->>Q2: enqueue background job (delay=60000)
+    W1->>Q2: enqueue background job (delay=30000)
 ```
 
-### 7.2 Repeated primary completions within 60s
+### 7.2 Repeated primary completions within 30s
 
 ```mermaid
 sequenceDiagram
     participant W1 as "Primary Worker"
     participant Q2 as "Background Scheduler"
 
-    W1->>Q2: enqueue conv job (delay=60000)
+    W1->>Q2: enqueue conv job (delay=30000)
     W1->>Q2: enqueue same conv again before delay
     Q2->>Q2: remove waiting/delayed prior job
-    Q2->>Q2: add new delayed job (delay=60000)
+    Q2->>Q2: add new delayed job (delay=30000)
 ```
 
 ### 7.3 Background active + new primary completion

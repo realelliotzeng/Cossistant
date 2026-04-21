@@ -71,7 +71,14 @@ function createInput(overrides: Partial<Record<string, unknown>> = {}) {
 		} as never,
 		conversation: {
 			id: "conv-1",
+			title: "Billing follow-up",
+			titleSource: "ai",
+			visitorTitle: "Seguimiento de facturacion",
+			visitorTitleLanguage: "es",
 		} as never,
+		websiteDefaultLanguage: "en",
+		visitorLanguage: "es",
+		autoTranslateEnabled: true,
 		generationEntries: [],
 		visitorContext: null,
 		conversationState: {
@@ -271,9 +278,34 @@ describe("buildGenerationSystemPrompt", () => {
 		expect(prompt).toContain("text=Any update?");
 		expect(prompt).toContain("hasLaterHumanMessage=yes");
 		expect(prompt).toContain("hasLaterAiMessage=yes");
+		expect(prompt).toContain("## Conversation Title State");
+		expect(prompt).toContain("internalTitle=Billing follow-up");
+		expect(prompt).toContain("internalTitleSource=ai");
+		expect(prompt).toContain("visitorTitle=Seguimiento de facturacion");
 		expect(prompt).toContain("## Timeline Semantics");
 		expect(prompt).toContain(
 			"[AFTER] contains newer context for awareness only."
+		);
+	});
+
+	it("pins internal titles to the website default language and keeps visitor titles system-derived", () => {
+		const prompt = buildGenerationSystemPrompt({
+			input: createInput() as never,
+			promptBundle,
+			toolset: {
+				updateConversationTitle: {
+					description: "Update the internal conversation title",
+				},
+				skip: { description: "Finish without changes" },
+			} as never,
+			toolNames: ["updateConversationTitle", "skip"],
+		});
+
+		expect(prompt).toContain(
+			"If you call updateConversationTitle, write the saved internal conversation.title in en only."
+		);
+		expect(prompt).toContain(
+			"Never localize the internal title yourself. The system derives visitorTitle separately for the visitor-facing language."
 		);
 	});
 });

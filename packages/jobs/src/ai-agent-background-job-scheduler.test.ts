@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Queue } from "bullmq";
 import {
 	AI_AGENT_BACKGROUND_DELAY_MS,
+	AI_AGENT_BACKGROUND_RETRY_ATTEMPTS,
+	AI_AGENT_BACKGROUND_RETRY_BACKOFF_MS,
 	enqueueConversationScopedAiBackgroundJob,
 } from "./ai-agent-background-job-scheduler";
 import type { AiAgentBackgroundJobData } from "./types";
@@ -81,7 +83,11 @@ describe("enqueueConversationScopedAiBackgroundJob", () => {
 			"ai-agent-background",
 			buildJobData(),
 			{
-				attempts: 1,
+				attempts: AI_AGENT_BACKGROUND_RETRY_ATTEMPTS,
+				backoff: {
+					type: "exponential",
+					delay: AI_AGENT_BACKGROUND_RETRY_BACKOFF_MS,
+				},
 				delay: AI_AGENT_BACKGROUND_DELAY_MS,
 				jobId: "ai-agent-background-conv-1",
 				removeOnComplete: true,
@@ -90,17 +96,25 @@ describe("enqueueConversationScopedAiBackgroundJob", () => {
 		);
 	});
 
-	it("reschedules waiting/delayed jobs by removing and recreating with a fresh delay", async () => {
+	it("reschedules waiting/delayed jobs by removing and recreating with a fresh delay and newest source message", async () => {
 		existingState = "waiting";
+		const waitingJobData = buildJobData({
+			sourceMessageId: "msg-waiting",
+			sourceMessageCreatedAt: "2026-03-04T10:01:00.000Z",
+		});
 		const waitingResult = await enqueueConversationScopedAiBackgroundJob({
 			queue: buildQueue(),
-			data: buildJobData(),
+			data: waitingJobData,
 		});
 
 		existingState = "delayed";
+		const delayedJobData = buildJobData({
+			sourceMessageId: "msg-delayed",
+			sourceMessageCreatedAt: "2026-03-04T10:02:00.000Z",
+		});
 		const delayedResult = await enqueueConversationScopedAiBackgroundJob({
 			queue: buildQueue(),
-			data: buildJobData(),
+			data: delayedJobData,
 		});
 
 		expect(waitingResult).toEqual({
@@ -113,6 +127,8 @@ describe("enqueueConversationScopedAiBackgroundJob", () => {
 		});
 		expect(removeCount).toBe(2);
 		expect(addMock).toHaveBeenCalledTimes(2);
+		expect(addMock.mock.calls[0]?.[1]).toEqual(waitingJobData);
+		expect(addMock.mock.calls[1]?.[1]).toEqual(delayedJobData);
 	});
 
 	it("skips enqueue when active job exists", async () => {
@@ -174,7 +190,11 @@ describe("enqueueConversationScopedAiBackgroundJob", () => {
 			"ai-agent-background",
 			buildJobData(),
 			{
-				attempts: 1,
+				attempts: AI_AGENT_BACKGROUND_RETRY_ATTEMPTS,
+				backoff: {
+					type: "exponential",
+					delay: AI_AGENT_BACKGROUND_RETRY_BACKOFF_MS,
+				},
 				delay: 0,
 				jobId: "ai-agent-background-conv-1",
 				removeOnComplete: true,
