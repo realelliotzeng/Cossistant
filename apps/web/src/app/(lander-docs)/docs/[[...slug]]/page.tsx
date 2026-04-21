@@ -7,8 +7,6 @@ import { JsonLdScripts } from "@/components/seo/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icons";
-import { Separator } from "@/components/ui/separator";
-import { GITHUB_URL } from "@/constants";
 import {
 	buildBreadcrumbJsonLd,
 	buildTechArticleJsonLd,
@@ -16,9 +14,10 @@ import {
 } from "@/lib/metadata";
 import { getDocsData } from "@/lib/seo-content";
 import { source } from "@/lib/source";
+import { DocsSidebar } from "../../components/docs/docs-sidebar";
 import { DocsTableOfContents } from "../../components/docs/docs-toc";
+import { DocsTopBar } from "../../components/docs/docs-topbar";
 import { mdxComponents } from "../../components/docs/mdx-components";
-import { LLMCopyButton, ViewOptions } from "../../components/page-actions";
 
 export const revalidate = false;
 export const dynamic = "force-static";
@@ -132,7 +131,7 @@ export default async function Page(props: {
 
 	return (
 		<div
-			className="flex items-stretch py-20 pb-120 text-[1.05rem] sm:text-[15px] xl:w-full"
+			className="flex flex-col pt-20 pb-120 text-[1.05rem] sm:text-[15px] lg:pt-20 xl:w-full"
 			data-slot="docs"
 		>
 			<JsonLdScripts
@@ -151,119 +150,85 @@ export default async function Page(props: {
 				]}
 				idPrefix="docs-jsonld"
 			/>
-			<div className="flex min-w-0 flex-1 flex-col">
-				<div className="h-(--top-spacing) shrink-0" />
-				<div className="mx-auto flex w-full min-w-0 max-w-2xl flex-1 flex-col gap-8 px-4 py-6 text-neutral-800 md:px-0 lg:py-8 dark:text-neutral-300">
-					<div className="flex flex-col gap-2">
+			<DocsTopBar currentPagePath={page.path} currentPageUrl={page.url} />
+			<div className="grid min-w-0 items-start px-2 pt-(--docs-topbar-height) lg:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] xl:grid-cols-[var(--sidebar-width)_minmax(0,1fr)_18rem]">
+				<DocsSidebar tree={source.pageTree} />
+				<div className="flex min-w-0 flex-1 flex-col xl:col-start-2">
+					<div className="h-(--top-spacing) shrink-0" />
+					<div className="mx-auto flex w-full min-w-0 max-w-2xl flex-1 flex-col gap-8 px-4 py-6 text-neutral-800 md:px-0 lg:py-8 dark:text-neutral-300">
 						<div className="flex flex-col gap-2">
-							<div className="flex items-start justify-between">
+							<div className="flex flex-col gap-2">
 								<h1 className="scroll-m-20 font-medium text-4xl tracking-tight sm:text-3xl xl:text-4xl">
 									{doc.title}
 								</h1>
-								<div className="flex items-center gap-2 pt-1.5">
-									{neighbours.previous && (
-										<Button
-											asChild
-											className="extend-touch-target size-8 shadow-none md:size-7"
-											size="icon"
-											variant="secondary"
-										>
-											<Link href={neighbours.previous.url}>
-												<Icon name="arrow-left" />
-												<span className="sr-only">Previous</span>
+								{doc.description && (
+									<p className="text-balance text-[1.05rem] text-muted-foreground sm:text-base">
+										{doc.description}
+									</p>
+								)}
+							</div>
+							{links ? (
+								<div className="flex items-center space-x-2 pt-4">
+									{links?.doc && (
+										<Badge asChild variant="secondary">
+											<Link href={links.doc} rel="noreferrer" target="_blank">
+												Docs <Icon name="arrow-up-right" />
 											</Link>
-										</Button>
+										</Badge>
 									)}
-									{neighbours.next && (
-										<Button
-											asChild
-											className="extend-touch-target size-8 shadow-none md:size-7"
-											size="icon"
-											variant="secondary"
-										>
-											<Link href={neighbours.next.url}>
-												<span className="sr-only">Next</span>
-												<Icon name="arrow-right" />
+									{links?.api && (
+										<Badge asChild variant="secondary">
+											<Link href={links.api} rel="noreferrer" target="_blank">
+												API Reference <Icon name="arrow-up-right" />
 											</Link>
-										</Button>
+										</Badge>
 									)}
 								</div>
-							</div>
-							{doc.description && (
-								<p className="text-balance text-[1.05rem] text-muted-foreground sm:text-base">
-									{doc.description}
-								</p>
-							)}
+							) : null}
 						</div>
-						{links ? (
-							<div className="flex items-center space-x-2 pt-4">
-								{links?.doc && (
-									<Badge asChild variant="secondary">
-										<Link href={links.doc} rel="noreferrer" target="_blank">
-											Docs <Icon name="arrow-up-right" />
-										</Link>
-									</Badge>
-								)}
-								{links?.api && (
-									<Badge asChild variant="secondary">
-										<Link href={links.api} rel="noreferrer" target="_blank">
-											API Reference <Icon name="arrow-up-right" />
-										</Link>
-									</Badge>
-								)}
-							</div>
-						) : null}
+						<div className="w-full flex-1 *:data-[slot=alert]:first:mt-0">
+							<MDX components={mdxComponents} />
+						</div>
 					</div>
-					<div className="w-full flex-1 *:data-[slot=alert]:first:mt-0">
-						<MDX components={mdxComponents} />
+					<div className="mx-auto flex h-16 w-full max-w-2xl items-center gap-2 px-4 md:px-0">
+						{neighbours.previous && (
+							<Button
+								asChild
+								className="shadow-none"
+								size="sm"
+								variant="secondary"
+							>
+								<Link href={neighbours.previous.url}>
+									<Icon name="arrow-left" /> {neighbours.previous.name}
+								</Link>
+							</Button>
+						)}
+						{neighbours.next && (
+							<Button
+								asChild
+								className="ml-auto shadow-none"
+								size="sm"
+								variant="secondary"
+							>
+								<Link href={neighbours.next.url}>
+									{neighbours.next.name} <Icon name="arrow-right" />
+								</Link>
+							</Button>
+						)}
 					</div>
 				</div>
-				<div className="mx-auto flex h-16 w-full max-w-2xl items-center gap-2 px-4 md:px-0">
-					{neighbours.previous && (
-						<Button
-							asChild
-							className="shadow-none"
-							size="sm"
-							variant="secondary"
-						>
-							<Link href={neighbours.previous.url}>
-								<Icon name="arrow-left" /> {neighbours.previous.name}
-							</Link>
-						</Button>
-					)}
-					{neighbours.next && (
-						<Button
-							asChild
-							className="ml-auto shadow-none"
-							size="sm"
-							variant="secondary"
-						>
-							<Link href={neighbours.next.url}>
-								{neighbours.next.name} <Icon name="arrow-right" />
-							</Link>
-						</Button>
-					)}
-				</div>
-			</div>
-			<div className="sticky top-[calc(var(--header-height)+1px)] z-30 ml-auto hidden h-[calc(100svh-var(--header-height)-var(--footer-height))] w-72 flex-col gap-4 overflow-hidden overscroll-none pb-8 xl:flex">
-				<div className="h-(--top-spacing) shrink-0" />
-				{doc.toc?.length ? (
-					<div className="no-scrollbar overflow-y-auto px-8">
-						<div className="flex gap-1 pl-4">
-							<LLMCopyButton markdownUrl={`${page.url}.mdx`} />
-							<ViewOptions
-								githubUrl={`${GITHUB_URL}/blob/main/apps/web/content/docs/${page.path}`}
-								markdownUrl={`${page.url}.mdx`}
-							/>
+				<div className="sticky top-[calc(var(--header-height)+var(--docs-topbar-height)+1px)] z-30 hidden h-[calc(100svh-var(--header-height)-var(--docs-topbar-height)-var(--footer-height))] w-72 flex-col gap-4 self-start overflow-hidden overscroll-none pb-8 xl:col-start-3 xl:flex">
+					<div className="h-(--top-spacing) shrink-0" />
+					{doc.toc?.length ? (
+						<div className="no-scrollbar overflow-y-auto px-8">
+							<DocsTableOfContents toc={doc.toc} />
+							<div className="h-12" />
 						</div>
-						<Separator className="my-6 opacity-50" />
-						<DocsTableOfContents toc={doc.toc} />
-						<div className="h-12" />
-					</div>
-				) : null}
-				{/* <div className="flex flex-1 flex-col gap-12 px-6">
+					) : null}
+					{/* <div className="flex flex-1 flex-col gap-12 px-6">
           <OpenInV0Cta />
         </div> */}
+				</div>
 			</div>
 		</div>
 	);

@@ -27,6 +27,7 @@ async function renderNotification(
 	props: Partial<{
 		date: string;
 		description: string;
+		dismissible: boolean;
 		onOpenChange: (open: boolean) => void;
 		open: boolean;
 		tinyExcerpt: string;
@@ -76,5 +77,28 @@ describe("ChangelogNotification", () => {
 		const html = await renderNotification({ open: true });
 
 		expect(html).toBe("");
+	});
+
+	it("renders a non-dismissible docs version without the dismiss button", async () => {
+		dismissed = false;
+		const html = await renderNotification({
+			dismissible: false,
+			open: false,
+		});
+
+		expect(html).toContain('data-slot="changelog-notification-trigger"');
+		expect(html).not.toContain('data-slot="changelog-notification-dismiss"');
+		expect(html).toContain("What&#x27;s new");
+	});
+
+	it("ignores the dismissed store in non-dismissible docs mode", async () => {
+		dismissed = true;
+		const html = await renderNotification({
+			dismissible: false,
+			open: true,
+		});
+
+		expect(html).toContain('data-slot="dashboard-changelog-overlay"');
+		expect(html).toContain("Latest release details for the widget.");
 	});
 });

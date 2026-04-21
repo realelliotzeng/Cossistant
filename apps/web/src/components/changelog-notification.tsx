@@ -16,9 +16,10 @@ type ChangelogNotificationProps = {
 	children?: React.ReactNode;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	dismissible?: boolean;
 };
 
-export function ChangelogNotification({
+function BaseChangelogNotification({
 	version,
 	description,
 	tinyExcerpt,
@@ -26,21 +27,24 @@ export function ChangelogNotification({
 	children,
 	open,
 	onOpenChange,
-}: ChangelogNotificationProps) {
-	const { isDismissed, dismiss } = useChangelogDismissed();
-
-	const id = version ? `v${version}` : tinyExcerpt;
+	dismissible = true,
+	onDismiss,
+}: ChangelogNotificationProps & {
+	onDismiss?: (() => void) | null;
+}) {
 	const releaseBadge = version ? `v${version}` : "NEW";
-
-	if (isDismissed(id)) {
-		return null;
-	}
+	const overlayDescription = dismissible
+		? "Latest release details for your dashboard."
+		: "Latest release details for the widget.";
 
 	return (
 		<>
 			<div className="flex items-center gap-1.5">
 				<button
-					className="hidden items-center gap-2 px-1 py-0.5 font-mono text-primary/80 text-xs transition-colors hover:bg-background-300 hover:text-primary sm:flex"
+					className={cn(
+						"items-center gap-2 px-1 py-0.5 font-mono text-primary/80 text-xs transition-colors hover:bg-background-300 hover:text-primary",
+						dismissible ? "hidden sm:flex" : "flex"
+					)}
 					data-slot="changelog-notification-trigger"
 					onClick={() => onOpenChange(true)}
 					type="button"
@@ -48,20 +52,29 @@ export function ChangelogNotification({
 					<span className="rounded-xs bg-background-400 px-1.5 py-0.5 font-semibold text-[10px] leading-none">
 						{releaseBadge}
 					</span>
-					<span className="hidden sm:inline">{tinyExcerpt}</span>
+					{dismissible ? (
+						<span className="hidden sm:inline">{tinyExcerpt}</span>
+					) : (
+						<>
+							<span className="sm:hidden">What's new</span>
+							<span className="hidden sm:inline">{tinyExcerpt}</span>
+						</>
+					)}
 				</button>
-				<button
-					className="rounded-sm p-0.5 text-primary/40 transition-colors hover:bg-background-300 hover:text-primary/80"
-					data-slot="changelog-notification-dismiss"
-					onClick={(e) => {
-						e.stopPropagation();
-						onOpenChange(false);
-						dismiss(id);
-					}}
-					type="button"
-				>
-					<XIcon className="size-3" />
-				</button>
+				{dismissible ? (
+					<button
+						className="rounded-sm p-0.5 text-primary/40 transition-colors hover:bg-background-300 hover:text-primary/80"
+						data-slot="changelog-notification-dismiss"
+						onClick={(e) => {
+							e.stopPropagation();
+							onOpenChange(false);
+							onDismiss?.();
+						}}
+						type="button"
+					>
+						<XIcon className="size-3" />
+					</button>
+				) : null}
 			</div>
 
 			{open ? (
@@ -105,7 +118,7 @@ export function ChangelogNotification({
 											className="text-muted-foreground text-sm"
 											id="dashboard-changelog-description"
 										>
-											Latest release details for your dashboard.
+											{overlayDescription}
 										</p>
 									</div>
 								</div>
@@ -133,4 +146,30 @@ export function ChangelogNotification({
 			) : null}
 		</>
 	);
+}
+
+function DismissibleChangelogNotification(props: ChangelogNotificationProps) {
+	const { isDismissed, dismiss } = useChangelogDismissed();
+
+	const id = props.version ? `v${props.version}` : props.tinyExcerpt;
+
+	if (isDismissed(id)) {
+		return null;
+	}
+
+	return <BaseChangelogNotification {...props} onDismiss={() => dismiss(id)} />;
+}
+
+function NonDismissibleChangelogNotification(
+	props: ChangelogNotificationProps
+) {
+	return <BaseChangelogNotification {...props} dismissible={false} />;
+}
+
+export function ChangelogNotification(props: ChangelogNotificationProps) {
+	if (props.dismissible === false) {
+		return <NonDismissibleChangelogNotification {...props} />;
+	}
+
+	return <DismissibleChangelogNotification {...props} />;
 }
