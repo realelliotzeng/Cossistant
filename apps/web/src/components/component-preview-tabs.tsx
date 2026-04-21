@@ -55,7 +55,7 @@ export function ComponentPreviewTabs({
 					</TabsList>
 				</div>
 				<div
-					className="relative overflow-hidden border border-border/70 border-dashed bg-transparent"
+					className="relative overflow-hidden bg-transparent"
 					data-slot="component-preview-frame"
 				>
 					{tab === "preview" && (

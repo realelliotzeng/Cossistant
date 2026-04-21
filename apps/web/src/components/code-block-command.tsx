@@ -41,7 +41,7 @@ export function CodeBlockCommand({
 	);
 
 	return (
-		<div className="relative overflow-x-auto">
+		<div className="relative overflow-x-auto border border-border border-dashed">
 			<Tabs
 				className="gap-0"
 				onValueChange={(value) => {
