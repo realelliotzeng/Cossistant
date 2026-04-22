@@ -4,18 +4,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { LogoTextSVG } from "./logo";
 
 describe("LogoTextSVG", () => {
-	it("keeps the eye cutouts transparent by default", () => {
+	it("renders the logo mark as a single punched-out shape", () => {
 		const html = renderToStaticMarkup(<LogoTextSVG />);
 
-		expect(html).toContain('fill="transparent"');
-	});
-
-	it("supports overriding the eye fill for promo scenes", () => {
-		const html = renderToStaticMarkup(
-			<LogoTextSVG eyeFill="var(--background)" />
-		);
-
-		expect(html).toContain('fill="var(--background)"');
-		expect(html).not.toContain('fill="transparent"');
+		expect(html.match(/<path/g)?.length).toBe(2);
+		expect(html).toContain('fill-rule="evenodd"');
 	});
 });

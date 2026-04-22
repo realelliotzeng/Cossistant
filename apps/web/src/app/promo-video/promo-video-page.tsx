@@ -425,10 +425,7 @@ export function PromoLogoEndScene({
 								type: "spring",
 							}}
 						>
-							<LogoTextSVG
-								className="w-[min(78%,980px)] text-primary"
-								eyeFill="var(--background)"
-							/>
+							<LogoTextSVG className="w-[min(78%,980px)] text-primary" />
 						</motion.div>
 					) : null}
 				</AnimatePresence>
