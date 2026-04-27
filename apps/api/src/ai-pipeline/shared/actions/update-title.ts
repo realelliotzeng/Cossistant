@@ -41,6 +41,10 @@ function normalizeTitle(title: string): string {
 	return title.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
+function normalizeDisplayTitle(title: string): string {
+	return title.trim().replace(/\s+/g, " ");
+}
+
 /**
  * Check if two titles are meaningfully different
  */
@@ -56,7 +60,7 @@ function isTitleDifferent(oldTitle: string | null, newTitle: string): boolean {
  */
 export async function updateTitle(params: UpdateTitleParams): Promise<{
 	changed: boolean;
-	reason?: "unchanged" | "manual_title";
+	reason?: "unchanged" | "manual_title" | "invalid_title";
 }> {
 	const {
 		db,
@@ -64,10 +68,17 @@ export async function updateTitle(params: UpdateTitleParams): Promise<{
 		organizationId,
 		websiteId,
 		aiAgentId,
-		title,
 		translationContext,
 		emitTimelineEvent = false,
 	} = params;
+	const title = normalizeDisplayTitle(params.title);
+
+	if (!title) {
+		return {
+			changed: false,
+			reason: "invalid_title",
+		};
+	}
 
 	const currentConversation = await loadCurrentConversation(db, conv.id);
 	if (!currentConversation) {

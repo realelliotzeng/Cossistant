@@ -19,6 +19,7 @@ import {
 } from "../shared/generation";
 import { BACKGROUND_ONE_SHOT_TOOL_NAMES } from "../shared/tools/background-one-shot";
 import { runBackgroundKnowledgeGapReview } from "./knowledge-gap-review";
+import { runBackgroundTitleReview } from "./title-review";
 
 export type BackgroundPipelineInput = {
 	conversationId: string;
@@ -86,6 +87,7 @@ type BackgroundIntakeReadyData = {
 		ReturnType<typeof loadIntakeContext>
 	>["hasLaterAiMessage"];
 	availableViews: Awaited<ReturnType<typeof listActiveWebsiteViews>>;
+	titleReviewEnabled: boolean;
 };
 
 type BackgroundIntakeResult =
@@ -124,7 +126,7 @@ function getBackgroundToolAllowlist(
 	const allowlist = BACKGROUND_ANALYSIS_TOOL_IDS.filter((toolId) => {
 		switch (toolId) {
 			case "updateConversationTitle":
-				return settings.autoGenerateTitle;
+				return false;
 			case "updateSentiment":
 				return settings.autoAnalyzeSentiment;
 			case "setPriority":
@@ -143,6 +145,12 @@ function hasBackgroundAnalysisWork(
 	toolAllowlist: readonly AiAgentToolId[]
 ): boolean {
 	return toolAllowlist.some((toolId) => toolId !== "skip");
+}
+
+function hasTitleReviewEnabled(
+	aiAgent: Awaited<ReturnType<typeof getAiAgentById>>
+): boolean {
+	return aiAgent ? getBehaviorSettings(aiAgent).autoGenerateTitle : false;
 }
 
 function hasBackgroundMutation(result: GenerationRuntimeResult): boolean {
@@ -168,7 +176,8 @@ async function runBackgroundIntake(
 	}
 
 	const toolAllowlist = getBackgroundToolAllowlist(aiAgent);
-	if (!hasBackgroundAnalysisWork(toolAllowlist)) {
+	const titleReviewEnabled = hasTitleReviewEnabled(aiAgent);
+	if (!(titleReviewEnabled || hasBackgroundAnalysisWork(toolAllowlist))) {
 		return {
 			status: "skipped",
 			reason: "No background analysis capabilities enabled",
@@ -239,6 +248,7 @@ async function runBackgroundIntake(
 		hasLaterHumanMessage: intakeContext.hasLaterHumanMessage,
 		hasLaterAiMessage: intakeContext.hasLaterAiMessage,
 		availableViews,
+		titleReviewEnabled,
 	};
 }
 
@@ -380,6 +390,25 @@ export async function runBackgroundPipeline(
 		}
 
 		const analysisStartedAt = Date.now();
+		const titleReviewResult = intakeResult.titleReviewEnabled
+			? await runBackgroundTitleReview({
+					db: ctx.db,
+					aiAgent: intakeResult.aiAgent,
+					conversation: intakeResult.conversation,
+					organizationId: ctx.input.organizationId,
+					websiteId: ctx.input.websiteId,
+					aiAgentId: ctx.input.aiAgentId,
+					websiteDefaultLanguage: intakeResult.websiteDefaultLanguage,
+					visitorLanguage: intakeResult.visitorLanguage,
+					autoTranslateEnabled: intakeResult.autoTranslateEnabled !== false,
+					conversationHistory: intakeResult.conversationHistory,
+					triggerMessage: intakeResult.triggerMessage,
+				})
+			: ({
+					status: "skipped",
+					reason: "disabled",
+				} as const);
+
 		const generationResult = await runBackgroundAnalysis({
 			ctx,
 			intake: intakeResult,
@@ -462,7 +491,8 @@ export async function runBackgroundPipeline(
 			});
 		}
 
-		if (!hasBackgroundMutation(generationResult)) {
+		const titleReviewUpdated = titleReviewResult.status === "updated";
+		if (!(titleReviewUpdated || hasBackgroundMutation(generationResult))) {
 			logAiPipeline({
 				area: "background",
 				event: "skip",
@@ -511,8 +541,12 @@ export async function runBackgroundPipeline(
 			conversation: intakeResult.conversation,
 			aiAgentId: intakeResult.aiAgent.id,
 			status: "success",
-			action: generationResult.action.action,
-			reason: generationResult.action.reasoning,
+			action: titleReviewUpdated
+				? "updateConversationTitle"
+				: generationResult.action.action,
+			reason: titleReviewUpdated
+				? titleReviewResult.reason
+				: generationResult.action.reasoning,
 		});
 		executionMs = Date.now() - executionStartedAt;
 		return buildBackgroundPipelineResult({

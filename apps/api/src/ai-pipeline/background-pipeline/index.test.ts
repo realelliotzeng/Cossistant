@@ -120,6 +120,30 @@ const runBackgroundKnowledgeGapReviewMock = mock((async () => ({
 	status: "skipped" as const,
 	reason: "no_candidate_gap" as const,
 })) as (...args: unknown[]) => Promise<any>);
+const createModelMock = mock((modelId: string) => modelId);
+const generateTextMock = mock((async () => ({
+	output: {
+		title: "Visitor asked for help",
+		confidence: 0.9,
+		reason: "Fallback title for a generic help request.",
+	},
+})) as (...args: unknown[]) => Promise<any>);
+const resolveModelForExecutionMock = mock((modelId: string) => ({
+	modelIdResolved: modelId,
+}));
+const loadCurrentConversationMock = mock(async () => ({
+	id: "conv-1",
+	visitorId: "visitor-1",
+	title: null as string | null,
+	titleSource: null as "ai" | "user" | null,
+	visitorLanguage: "es",
+}));
+const realtimeEmitMock = mock(async () => {});
+const createTimelineItemMock = mock(async () => {});
+const syncConversationVisitorTitleMock = mock(async () => ({
+	visitorTitle: null,
+	visitorTitleLanguage: null,
+}));
 
 mock.module("../logger", () => ({
 	logAiPipeline: logAiPipelineMock,
@@ -154,6 +178,36 @@ mock.module("./knowledge-gap-review", () => ({
 	runBackgroundKnowledgeGapReview: runBackgroundKnowledgeGapReviewMock,
 }));
 
+mock.module("@api/lib/ai", () => ({
+	createModel: createModelMock,
+	generateText: generateTextMock,
+	Output: {
+		object: (params: unknown) => params,
+	},
+}));
+
+mock.module("@api/lib/ai-credits/config", () => ({
+	resolveModelForExecution: resolveModelForExecutionMock,
+}));
+
+mock.module("../shared/actions/load-current-conversation", () => ({
+	loadCurrentConversation: loadCurrentConversationMock,
+}));
+
+mock.module("@api/realtime/emitter", () => ({
+	realtime: {
+		emit: realtimeEmitMock,
+	},
+}));
+
+mock.module("@api/utils/timeline-item", () => ({
+	createTimelineItem: createTimelineItemMock,
+}));
+
+mock.module("@api/lib/translation", () => ({
+	syncConversationVisitorTitle: syncConversationVisitorTitleMock,
+}));
+
 mock.module("../shared/events", () => ({
 	emitPipelineProcessingCompleted: emitPipelineProcessingCompletedMock,
 	emitPipelineProcessingCompletedSafely: emitPipelineProcessingCompletedMock,
@@ -178,6 +232,34 @@ const baseInput = {
 	jobId: "job-1",
 };
 
+function createDbMock() {
+	const returningMock = mock(async () => [
+		{
+			id: "conv-1",
+			visitorId: "visitor-1",
+			titleSource: "ai",
+		},
+	]);
+	const whereMock = mock(() => ({
+		returning: returningMock,
+	}));
+	const setMock = mock(() => ({
+		where: whereMock,
+	}));
+	const updateMock = mock(() => ({
+		set: setMock,
+	}));
+
+	return {
+		db: {
+			update: updateMock,
+		},
+		updateMock,
+		returningMock,
+		setMock,
+	};
+}
+
 describe("runBackgroundPipeline", () => {
 	beforeEach(() => {
 		logAiPipelineMock.mockClear();
@@ -189,6 +271,13 @@ describe("runBackgroundPipeline", () => {
 		emitPipelineProcessingCompletedMock.mockReset();
 		runGenerationRuntimeMock.mockReset();
 		runBackgroundKnowledgeGapReviewMock.mockReset();
+		createModelMock.mockReset();
+		generateTextMock.mockReset();
+		resolveModelForExecutionMock.mockReset();
+		loadCurrentConversationMock.mockReset();
+		realtimeEmitMock.mockReset();
+		createTimelineItemMock.mockReset();
+		syncConversationVisitorTitleMock.mockReset();
 
 		getAiAgentByIdMock.mockResolvedValue({
 			id: "ai-1",
@@ -281,6 +370,30 @@ describe("runBackgroundPipeline", () => {
 			status: "skipped",
 			reason: "no_candidate_gap",
 		});
+		createModelMock.mockImplementation((modelId: string) => modelId);
+		generateTextMock.mockResolvedValue({
+			output: {
+				title: "Visitor asked for help",
+				confidence: 0.9,
+				reason: "Fallback title for a generic help request.",
+			},
+		});
+		resolveModelForExecutionMock.mockImplementation((modelId: string) => ({
+			modelIdResolved: modelId,
+		}));
+		loadCurrentConversationMock.mockResolvedValue({
+			id: "conv-1",
+			visitorId: "visitor-1",
+			title: null,
+			titleSource: null,
+			visitorLanguage: "es",
+		});
+		realtimeEmitMock.mockResolvedValue(undefined);
+		createTimelineItemMock.mockResolvedValue(undefined);
+		syncConversationVisitorTitleMock.mockResolvedValue({
+			visitorTitle: null,
+			visitorTitleLanguage: null,
+		});
 	});
 
 	it("skips when no background analysis capabilities are enabled", async () => {
@@ -302,6 +415,7 @@ describe("runBackgroundPipeline", () => {
 		expect(result.status).toBe("skipped");
 		expect(result.reason).toBe("No background analysis capabilities enabled");
 		expect(runGenerationRuntimeMock).not.toHaveBeenCalled();
+		expect(generateTextMock).not.toHaveBeenCalled();
 		expect(emitPipelineProcessingCompletedMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				status: "skipped",
@@ -338,15 +452,11 @@ describe("runBackgroundPipeline", () => {
 				allowPublicMessages: false,
 				hasLaterHumanMessage: false,
 				hasLaterAiMessage: false,
-				toolAllowlist: [
-					"updateConversationTitle",
-					"updateSentiment",
-					"setPriority",
-					"skip",
-				],
+				toolAllowlist: ["updateSentiment", "setPriority", "skip"],
 				availableViews: [],
 			})
 		);
+		expect(generateTextMock).toHaveBeenCalledTimes(1);
 		expect(emitPipelineProcessingCompletedMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				status: "success",
@@ -425,6 +535,14 @@ describe("runBackgroundPipeline", () => {
 	});
 
 	it("returns skipped when the analysis run makes no metadata mutation", async () => {
+		getBehaviorSettingsMock.mockReturnValue({
+			autoGenerateTitle: false,
+			autoAnalyzeSentiment: true,
+			canSetPriority: false,
+			autoCategorize: false,
+			canCategorize: false,
+			canRequestKnowledgeClarification: false,
+		});
 		runGenerationRuntimeMock.mockResolvedValueOnce({
 			status: "completed",
 			action: {
@@ -453,6 +571,95 @@ describe("runBackgroundPipeline", () => {
 				status: "skipped",
 				workflowRunId: "wf-1",
 				audience: "dashboard",
+			})
+		);
+	});
+
+	it("returns completed when the dedicated title review updates the title even if generic analysis skips", async () => {
+		generateTextMock.mockResolvedValueOnce({
+			output: {
+				title: "Invoice export issue",
+				confidence: 0.93,
+				reason: "Clear billing export topic",
+			},
+		});
+		runGenerationRuntimeMock.mockResolvedValueOnce({
+			status: "completed",
+			action: {
+				action: "skip",
+				reasoning: "No generic metadata update",
+				confidence: 1,
+			},
+			publicMessagesSent: 0,
+			toolCallsByName: {
+				skip: 1,
+			},
+			mutationToolCallsByName: {},
+			totalToolCalls: 1,
+		});
+
+		const { runBackgroundPipeline } = await modulePromise;
+		const { db } = createDbMock();
+		const result = await runBackgroundPipeline({
+			db: db as never,
+			input: baseInput,
+		});
+
+		expect(result.status).toBe("completed");
+		expect(emitPipelineProcessingCompletedMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				status: "success",
+				action: "updateConversationTitle",
+				reason: "Clear billing export topic",
+				workflowRunId: "wf-1",
+				audience: "dashboard",
+			})
+		);
+	});
+
+	it("schedules dedicated title review when title generation is the only enabled capability", async () => {
+		getBehaviorSettingsMock.mockReturnValue({
+			autoGenerateTitle: true,
+			autoAnalyzeSentiment: false,
+			canSetPriority: false,
+			autoCategorize: false,
+			canCategorize: false,
+			canRequestKnowledgeClarification: false,
+		});
+		generateTextMock.mockResolvedValueOnce({
+			output: {
+				title: "Invoice export issue",
+				confidence: 0.93,
+				reason: "Clear topic",
+			},
+		});
+		runGenerationRuntimeMock.mockResolvedValueOnce({
+			status: "completed",
+			action: {
+				action: "skip",
+				reasoning: "No generic metadata update",
+				confidence: 1,
+			},
+			publicMessagesSent: 0,
+			toolCallsByName: {
+				skip: 1,
+			},
+			mutationToolCallsByName: {},
+			totalToolCalls: 1,
+		});
+
+		const { runBackgroundPipeline } = await modulePromise;
+		const { db } = createDbMock();
+		const result = await runBackgroundPipeline({
+			db: db as never,
+			input: baseInput,
+		});
+
+		expect(result.status).toBe("completed");
+		expect(generateTextMock).toHaveBeenCalledTimes(1);
+		expect(runGenerationRuntimeMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				toolAllowlist: ["skip"],
 			})
 		);
 	});

@@ -143,6 +143,71 @@ describe("metadata update actions", () => {
 		expect(realtimeEmitMock).not.toHaveBeenCalled();
 	});
 
+	it("rejects blank titles before writing", async () => {
+		const [{ updateTitle }] = await modulePromise;
+		const { db, updateMock } = createDbMock();
+
+		const result = await updateTitle({
+			db: db as never,
+			conversation: {
+				id: "conv-1",
+				visitorId: "visitor-1",
+				title: null,
+			} as never,
+			organizationId: "org-1",
+			websiteId: "site-1",
+			aiAgentId: "ai-1",
+			title: "    ",
+			translationContext,
+		});
+
+		expect(result).toEqual({
+			changed: false,
+			reason: "invalid_title",
+		});
+		expect(updateMock).not.toHaveBeenCalled();
+		expect(loadCurrentConversationMock).not.toHaveBeenCalled();
+	});
+
+	it("normalizes title spacing before saving", async () => {
+		const [{ updateTitle }] = await modulePromise;
+		const { db, returningMock, setMock } = createDbMock();
+		returningMock.mockResolvedValueOnce([
+			{
+				id: "conv-1",
+				visitorId: "visitor-1",
+				titleSource: "ai",
+			},
+		]);
+
+		const result = await updateTitle({
+			db: db as never,
+			conversation: {
+				id: "conv-1",
+				visitorId: "visitor-1",
+				title: null,
+			} as never,
+			organizationId: "org-1",
+			websiteId: "site-1",
+			aiAgentId: "ai-1",
+			title: "  invoice    export   issue  ",
+			translationContext,
+		});
+
+		expect(result).toEqual({ changed: true });
+		expect(setMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				title: "invoice export issue",
+				titleSource: "ai",
+			})
+		);
+		expect(syncConversationVisitorTitleMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				title: "invoice export issue",
+			})
+		);
+	});
+
 	it("does not let AI overwrite a manually owned title", async () => {
 		const [{ updateTitle }] = await modulePromise;
 		const { db, updateMock } = createDbMock();

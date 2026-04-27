@@ -399,6 +399,57 @@ describe("ai-agent worker single-message orchestration", () => {
 		await worker.stop();
 	});
 
+	it("schedules background work when title generation is the only enabled capability", async () => {
+		getBehaviorSettingsMock.mockReturnValue({
+			autoGenerateTitle: true,
+			autoAnalyzeSentiment: false,
+			canSetPriority: false,
+			autoCategorize: false,
+			canCategorize: false,
+		});
+		getConversationByIdMock
+			.mockResolvedValueOnce({
+				id: "conv-1",
+				websiteId: "site-1",
+				organizationId: "org-1",
+				visitorId: "visitor-1",
+				aiAgentLastProcessedMessageCreatedAt: null,
+				aiAgentLastProcessedMessageId: null,
+			})
+			.mockResolvedValueOnce({
+				id: "conv-1",
+				websiteId: "site-1",
+				organizationId: "org-1",
+				visitorId: "visitor-1",
+				aiAgentLastProcessedMessageCreatedAt: "2026-03-04T10:00:00.000Z",
+				aiAgentLastProcessedMessageId: "msg-1",
+			});
+
+		const { createAiAgentWorker } = await modulePromise;
+		const worker = createAiAgentWorker({
+			connectionOptions: {} as never,
+			redisUrl: "redis://localhost:6379",
+		});
+
+		await worker.start();
+		await runJob(buildJobData());
+
+		expect(enqueueConversationScopedAiBackgroundJobMock).toHaveBeenCalledWith({
+			queue: expect.anything(),
+			data: {
+				conversationId: "conv-1",
+				websiteId: "site-1",
+				organizationId: "org-1",
+				aiAgentId: "ai-1",
+				sourceMessageId: "msg-1",
+				sourceMessageCreatedAt: "2026-03-04T10:00:00.000Z",
+			},
+			delayMs: 30_000,
+		});
+
+		await worker.stop();
+	});
+
 	it("processes only the earliest pending message after the DB cursor and cascades the next job", async () => {
 		getConversationByIdMock
 			.mockResolvedValueOnce({

@@ -40,7 +40,7 @@ export function createUpdateConversationTitleTool(ctx: PipelineToolContext) {
 		}): Promise<
 			PipelineToolResult<{
 				changed: boolean;
-				reason?: "unchanged" | "manual_title";
+				reason?: "unchanged" | "manual_title" | "invalid_title";
 				title?: string;
 			}>
 		> => {
