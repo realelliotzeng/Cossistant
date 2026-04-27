@@ -401,7 +401,7 @@ export default function OpenSourceProgramPage() {
 								) : null}
 								<div className="group overflow-hidden overflow-clip border-b border-dashed">
 									<Image
-										alt={`${project.name} open graph image`}
+										alt={`${project.name} preview`}
 										className="aspect-[1.91/1] h-auto w-full object-cover grayscale group-hover:grayscale-0"
 										height={630}
 										src={project.ogImageUrl}
