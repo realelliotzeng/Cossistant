@@ -8,6 +8,7 @@ import * as Primitive from "../../primitives";
 import { useSupportSlotOverrides } from "../context/slot-overrides";
 import type { TriggerRenderProps } from "../types";
 import { cn } from "../utils";
+import { CossistantLogo } from "./cossistant-branding";
 import Icon from "./icons";
 import { BouncingDots } from "./typing-indicator";
 
@@ -74,27 +75,7 @@ const TriggerContent: React.FC<TriggerContentProps> = ({
 				{displayedKey === "typing" && (
 					<BouncingDots className="bg-co-primary-foreground" />
 				)}
-				{displayedKey === "chat" && (
-					<svg
-						className="size-7"
-						fill="none"
-						height="60"
-						viewBox="0 0 73 60"
-						width="73"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<title>
-							cossistant.com logo, open source, AI / human customer support for
-							SaaS.
-						</title>
-						<path
-							clipRule="evenodd"
-							d="M72.6799 12.7088V59.6343H13.5579L0 47.0656V12.7088L13.5579 0H59.122L72.6799 12.7088Z"
-							fill="currentColor"
-							fillRule="evenodd"
-						/>
-					</svg>
-				)}
+				{displayedKey === "chat" && <CossistantLogo className="size-7" />}
 			</div>
 
 			{unreadCount > 0 && (

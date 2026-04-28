@@ -21,6 +21,7 @@ export type FeatureKey =
 	| "ai-credit"
 	| "latest-ai-models"
 	| "custom-ai-skills"
+	| "custom-ai-agent-avatar"
 	| "ai-support-agents"
 	| "ai-agent-training-links"
 	| "ai-agent-training-mb"
@@ -189,6 +190,12 @@ export const FEATURE_CONFIG: Record<FeatureKey, FeatureConfig> = {
 			"Create and use custom AI skills tailored to your support workflows",
 		category: "secondary",
 	},
+	"custom-ai-agent-avatar": {
+		key: "custom-ai-agent-avatar",
+		name: "Custom AI Agent Avatar",
+		description: "Upload a custom profile picture for your AI support agent",
+		category: "secondary",
+	},
 	"ai-support-agents": {
 		key: "ai-support-agents",
 		name: "AI Support Agents",
@@ -312,6 +319,7 @@ export const PLAN_CONFIG: Record<PlanName, PlanConfig> = {
 			"ai-credit": 50, // Limited AI credits
 			"latest-ai-models": false, // Paid only
 			"custom-ai-skills": true, // Included
+			"custom-ai-agent-avatar": false, // Pro only
 			"ai-support-agents": 1, // 1 AI agent
 			"ai-agent-training-links": 10, // 10 training links
 			"ai-agent-training-mb": 0.5, // 0.5 MB KB size
@@ -351,6 +359,7 @@ export const PLAN_CONFIG: Record<PlanName, PlanConfig> = {
 			"ai-credit": 1000, // Higher AI credits
 			"latest-ai-models": true, // Included
 			"custom-ai-skills": true, // Included
+			"custom-ai-agent-avatar": false, // Pro only
 			"ai-support-agents": 1, // 1 AI agent
 			"ai-agent-training-links": null, // Unlimited training links
 			"ai-agent-training-mb": 10, // 10 MB KB size
@@ -390,6 +399,7 @@ export const PLAN_CONFIG: Record<PlanName, PlanConfig> = {
 			"ai-credit": 3000, // Triple AI credits
 			"latest-ai-models": true, // Included
 			"custom-ai-skills": true, // Included
+			"custom-ai-agent-avatar": true, // Included
 			"ai-support-agents": 1, // 1 AI agent
 			"ai-agent-training-links": null, // Unlimited training links
 			"ai-agent-training-mb": 40, // 40 MB KB size

@@ -19,6 +19,7 @@ describe("self-hosted plan resolution", () => {
 		expect(planInfo.features["team-members"]).toBeNull();
 		expect(planInfo.features["latest-ai-models"]).toBe(true);
 		expect(planInfo.features["dashboard-file-sharing"]).toBe(true);
+		expect(planInfo.features["custom-ai-agent-avatar"]).toBe(true);
 		expect(planInfo.features["ai-agent-training-interval"]).toBe(0);
 	});
 });

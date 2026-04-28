@@ -294,6 +294,12 @@ describe("Support widget", () => {
 		expect(hasDialogRole()).toBe(false);
 	});
 
+	it("renders the Cossistant logo in the default closed trigger", async () => {
+		await renderWithSupport(<Support />);
+
+		expect(findByDataSlot("trigger")?.textContent).toContain("Cossistant Logo");
+	});
+
 	it("renders floating content as a dialog when the widget is open", async () => {
 		await renderWithSupport(
 			<Support.Root open={true}>

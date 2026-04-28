@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	getCustomAvatarAccessError,
 	getGenerateBasePromptFirecrawlOptions,
 	getModelSelectionError,
 } from "./ai-agent";
@@ -27,6 +28,46 @@ describe("ai-agent router model validation", () => {
 		const result = getModelSelectionError({
 			modelId: "moonshotai/kimi-k2-0905",
 			latestModelsFeature: false,
+		});
+
+		expect(result).toBeNull();
+	});
+});
+
+describe("ai-agent router custom avatar validation", () => {
+	it("rejects new custom avatars without the Pro feature", () => {
+		const result = getCustomAvatarAccessError({
+			customAvatarFeature: false,
+			nextImage: "https://cdn.example.com/agent.png",
+		});
+
+		expect(result?.code).toBe("FORBIDDEN");
+	});
+
+	it("allows new custom avatars with the Pro feature", () => {
+		const result = getCustomAvatarAccessError({
+			customAvatarFeature: true,
+			nextImage: "https://cdn.example.com/agent.png",
+		});
+
+		expect(result).toBeNull();
+	});
+
+	it("allows preserving an existing custom avatar without the Pro feature", () => {
+		const result = getCustomAvatarAccessError({
+			customAvatarFeature: false,
+			currentImage: "https://cdn.example.com/agent.png",
+			nextImage: "https://cdn.example.com/agent.png",
+		});
+
+		expect(result).toBeNull();
+	});
+
+	it("allows clearing a custom avatar without the Pro feature", () => {
+		const result = getCustomAvatarAccessError({
+			customAvatarFeature: false,
+			currentImage: "https://cdn.example.com/agent.png",
+			nextImage: null,
 		});
 
 		expect(result).toBeNull();

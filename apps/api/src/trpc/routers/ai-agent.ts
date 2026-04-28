@@ -15,6 +15,7 @@ import {
 	createAiAgent,
 	deleteAiAgent,
 	getAiAgentForWebsite,
+	getAiAgentForWebsiteById,
 	toggleAiAgentActive,
 	updateAiAgent,
 	updateAiAgentBehaviorSettings,
@@ -401,6 +402,24 @@ async function assertModelAllowedForWebsite(params: {
 	}
 }
 
+async function assertCustomAvatarAllowedForWebsite(params: {
+	website: Parameters<typeof getPlanForWebsite>[0];
+	nextImage: string | null | undefined;
+	currentImage?: string | null;
+}): Promise<void> {
+	const avatarAccessError = getCustomAvatarAccessError({
+		customAvatarFeature: (await getPlanForWebsite(params.website)).features[
+			"custom-ai-agent-avatar"
+		],
+		nextImage: params.nextImage,
+		currentImage: params.currentImage,
+	});
+
+	if (avatarAccessError) {
+		throw new TRPCError(avatarAccessError);
+	}
+}
+
 export function getModelSelectionError(params: {
 	modelId: string;
 	latestModelsFeature: unknown;
@@ -427,6 +446,29 @@ export function getModelSelectionError(params: {
 	}
 
 	return null;
+}
+
+export function getCustomAvatarAccessError(params: {
+	customAvatarFeature: unknown;
+	nextImage: string | null | undefined;
+	currentImage?: string | null;
+}): { code: "FORBIDDEN"; message: string } | null {
+	const nextImage = params.nextImage ?? null;
+	const currentImage = params.currentImage ?? null;
+
+	if (!nextImage || nextImage === currentImage) {
+		return null;
+	}
+
+	if (params.customAvatarFeature === true) {
+		return null;
+	}
+
+	return {
+		code: "FORBIDDEN",
+		message:
+			"Custom AI agent avatars require the Pro plan. Please upgrade your plan or use the default Cossistant logo.",
+	};
 }
 
 const GENERATE_BASE_PROMPT_FIRECRAWL_SCRAPE_MAX_AGE_MS = 3_600_000;
@@ -569,6 +611,10 @@ export const aiAgentRouter = createTRPCRouter({
 				website: websiteData,
 				modelId: input.model,
 			});
+			await assertCustomAvatarAllowedForWebsite({
+				website: websiteData,
+				nextImage: input.image,
+			});
 
 			const agent = await createAiAgent(db, {
 				name: input.name,
@@ -608,6 +654,25 @@ export const aiAgentRouter = createTRPCRouter({
 			await assertModelAllowedForWebsite({
 				website: websiteData,
 				modelId: input.model,
+			});
+
+			const existingAgent = await getAiAgentForWebsiteById(db, {
+				aiAgentId: input.aiAgentId,
+				websiteId: websiteData.id,
+				organizationId: websiteData.organizationId,
+			});
+
+			if (!existingAgent) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "AI agent not found",
+				});
+			}
+
+			await assertCustomAvatarAllowedForWebsite({
+				website: websiteData,
+				nextImage: input.image,
+				currentImage: existingAgent.image,
 			});
 
 			const agent = await updateAiAgent(db, {

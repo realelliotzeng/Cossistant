@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { ModelSelect } from "@/components/agents/model-select";
 import { copyToClipboardWithMeta } from "@/components/copy-button";
+import { UpgradeModal } from "@/components/plan/upgrade-modal";
 import {
 	AvatarInput,
 	type AvatarInputValue,
@@ -171,6 +172,7 @@ export function AIAgentForm({
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const [isUploadingImage, setIsUploadingImage] = useState(false);
+	const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 	const imageProgressToastAtRef = useRef(0);
 	const toolMentionOptions = useMemo(
 		() =>
@@ -375,6 +377,11 @@ export function AIAgentForm({
 
 	const isPending = isCreating || isUpdating;
 	const isSubmitting = isPending || isUploadingImage;
+	const canUseCustomAvatar =
+		planInfo?.plan.features["custom-ai-agent-avatar"] === true;
+	const canOpenUpgradeModal =
+		!!planInfo && planInfo.plan.name !== "self_hosted";
+	const shouldShowCustomAvatarUpgrade = !!planInfo && !canUseCustomAvatar;
 	const imageModeValue = form.watch("imageMode");
 	const imageValue = form.watch("image");
 	const nameValue = form.watch("name");
@@ -484,347 +491,385 @@ export function AIAgentForm({
 	]);
 
 	return (
-		<Form {...form}>
-			<form className="flex flex-col" onSubmit={form.handleSubmit(onSubmit)}>
-				{/* Enable/Disable toggle at the top when editing */}
-				{isEditing && initialData && (
-					<>
-						<div className="flex items-center justify-between border-b px-4 py-4">
-							<div className="flex flex-col gap-1">
-								<span className="font-medium text-sm">Agent Status</span>
-								<span className="text-muted-foreground text-xs">
-									{initialData.isActive
-										? "Agent is active and responding to visitors"
-										: "Agent is disabled and not responding"}
-								</span>
+		<>
+			<Form {...form}>
+				<form className="flex flex-col" onSubmit={form.handleSubmit(onSubmit)}>
+					{/* Enable/Disable toggle at the top when editing */}
+					{isEditing && initialData && (
+						<>
+							<div className="flex items-center justify-between border-b px-4 py-4">
+								<div className="flex flex-col gap-1">
+									<span className="font-medium text-sm">Agent Status</span>
+									<span className="text-muted-foreground text-xs">
+										{initialData.isActive
+											? "Agent is active and responding to visitors"
+											: "Agent is disabled and not responding"}
+									</span>
+								</div>
+								<Switch
+									checked={initialData.isActive}
+									disabled={isTogglingActive}
+									onCheckedChange={handleToggleActive}
+								/>
 							</div>
-							<Switch
-								checked={initialData.isActive}
-								disabled={isTogglingActive}
-								onCheckedChange={handleToggleActive}
+
+							{/* Agent ID - copiable only */}
+							<div className="flex items-center justify-between border-b px-4 py-4">
+								<div className="flex flex-col gap-1">
+									<span className="font-medium text-sm">Agent ID</span>
+									<span className="text-muted-foreground text-xs">
+										Unique identifier for API integrations
+									</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<code className="rounded bg-background-200 px-2 py-0.5 font-mono text-xs dark:bg-background-300">
+										{initialData.id}
+									</code>
+									<TooltipOnHover content="Copy agent ID">
+										<Button
+											onClick={handleCopyAgentId}
+											size="icon-small"
+											type="button"
+											variant="secondary"
+										>
+											<Icon
+												className="size-3.5"
+												filledOnHover
+												name={hasCopied ? "check" : "clipboard"}
+											/>
+										</Button>
+									</TooltipOnHover>
+								</div>
+							</div>
+						</>
+					)}
+
+					<div className="space-y-6 px-4 py-6">
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Name</FormLabel>
+									<FormControl>
+										<Input
+											placeholder={`${websiteName} AI`}
+											{...field}
+											disabled={isSubmitting}
+										/>
+									</FormControl>
+									<FormDescription>
+										A friendly name for your AI agent.
+									</FormDescription>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="imageMode"
+							render={({ field }) => (
+								<FormItem className="flex flex-col gap-3">
+									<FormLabel>Profile Picture</FormLabel>
+									<FormControl>
+										<RadioGroup
+											className="space-y-3"
+											disabled={isSubmitting}
+											onValueChange={field.onChange}
+											value={field.value}
+										>
+											<div className="flex items-start space-x-3">
+												<RadioGroupItem
+													className="mt-1"
+													id="agent-image-mode-default"
+													value="default"
+												/>
+												<div className="space-y-0.5">
+													<Label
+														className="cursor-pointer font-normal"
+														htmlFor="agent-image-mode-default"
+													>
+														Use Cossistant logo
+													</Label>
+													<p className="text-muted-foreground text-sm">
+														Show the default Cossistant profile picture.
+													</p>
+												</div>
+											</div>
+
+											<div className="flex items-start space-x-3">
+												<RadioGroupItem
+													className="mt-1"
+													id="agent-image-mode-custom"
+													value="custom"
+												/>
+												<div className="space-y-0.5">
+													<Label
+														className="cursor-pointer font-normal"
+														htmlFor="agent-image-mode-custom"
+													>
+														Upload custom image
+													</Label>
+													<p className="text-muted-foreground text-sm">
+														Use your own avatar or brand mark for the AI agent.
+													</p>
+												</div>
+											</div>
+										</RadioGroup>
+									</FormControl>
+									<FormDescription>
+										Choose which profile picture visitors and teammates will see
+										for this AI agent.
+									</FormDescription>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						{imageModeValue === "custom" && canUseCustomAvatar && (
+							<FormField
+								control={form.control}
+								name="image"
+								render={({ field }) => (
+									<FormItem className="flex flex-col gap-2">
+										<FormControl>
+											<AvatarInput
+												accept={AGENT_IMAGE_ACCEPT}
+												allowSvgUploads
+												disabled={isSubmitting}
+												name={field.name}
+												onBlur={field.onBlur}
+												onChange={(value) => {
+													field.onChange(value);
+													void form.trigger("image");
+												}}
+												onError={(error) => {
+													if (
+														!(
+															error as Error & {
+																handledByToast?: boolean;
+															}
+														)?.handledByToast
+													) {
+														toast.error(error.message);
+													}
+													setIsUploadingImage(false);
+												}}
+												onUpload={handleImageUpload}
+												onUploadComplete={() => setIsUploadingImage(false)}
+												onUploadStart={() => setIsUploadingImage(true)}
+												placeholder="Upload a square image at least 256×256px. SVG uploads are allowed."
+												ref={field.ref}
+												uploadLabel="Upload image"
+												value={field.value}
+											/>
+										</FormControl>
+										<FormDescription>
+											We&apos;ll use this image everywhere the AI agent appears
+											in the dashboard and support widget.
+										</FormDescription>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						)}
+
+						{shouldShowCustomAvatarUpgrade && (
+							<div className="rounded-lg border border-primary/20 border-dashed bg-background-100 p-3">
+								<p className="font-medium text-sm">
+									Custom AI agent avatars are a Pro feature.
+								</p>
+								<p className="text-muted-foreground text-xs">
+									Upgrade to Pro to upload or change this agent&apos;s profile
+									picture. Existing custom avatars will keep appearing until you
+									switch back to the default logo.
+								</p>
+								{canOpenUpgradeModal ? (
+									<Button
+										className="mt-3"
+										disabled={isSubmitting}
+										onClick={() => setIsUpgradeModalOpen(true)}
+										size="sm"
+										type="button"
+										variant="outline"
+									>
+										Upgrade to Pro
+									</Button>
+								) : null}
+							</div>
+						)}
+
+						<FormField
+							control={form.control}
+							name="description"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Description (optional)</FormLabel>
+									<FormControl>
+										<Input
+											placeholder="Helps users with common support questions"
+											{...field}
+											disabled={isSubmitting}
+										/>
+									</FormControl>
+									<FormDescription>
+										A brief description of what this agent does.
+									</FormDescription>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="model"
+							render={({ field }) => (
+								<FormItem>
+									<ModelSelect
+										description="The AI model to use for generating responses."
+										disabled={isSubmitting}
+										label="Model"
+										onChange={field.onChange}
+										planInfo={planInfo}
+										value={field.value}
+										websiteSlug={websiteSlug}
+									/>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="basePrompt"
+							render={({ field, fieldState }) => (
+								<FormItem>
+									<PromptInputWithMentions
+										description="The system prompt that defines how your AI agent behaves."
+										disabled={isSubmitting}
+										error={fieldState.error?.message}
+										label="Base Prompt"
+										maxLength={10_000}
+										onChange={field.onChange}
+										placeholder="You are a helpful support assistant..."
+										rows={10}
+										toolMentions={toolMentionOptions}
+										value={field.value}
+									/>
+								</FormItem>
+							)}
+						/>
+
+						<div className="grid grid-cols-2 gap-4">
+							<FormField
+								control={form.control}
+								name="temperature"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Temperature</FormLabel>
+										<FormControl>
+											<Input
+												disabled={isSubmitting}
+												max={2}
+												min={0}
+												placeholder="0.7"
+												step={0.1}
+												type="number"
+												{...field}
+												onChange={(e) =>
+													field.onChange(
+														e.target.value === ""
+															? undefined
+															: Number.parseFloat(e.target.value)
+													)
+												}
+												value={field.value ?? ""}
+											/>
+										</FormControl>
+										<FormDescription>
+											Controls randomness (0 = focused, 2 = creative).
+										</FormDescription>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name="maxOutputTokens"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Max Tokens</FormLabel>
+										<FormControl>
+											<Input
+												disabled={isSubmitting}
+												max={16_000}
+												min={100}
+												placeholder="1024"
+												step={100}
+												type="number"
+												{...field}
+												onChange={(e) =>
+													field.onChange(
+														e.target.value === ""
+															? undefined
+															: Number.parseInt(e.target.value, 10)
+													)
+												}
+												value={field.value ?? ""}
+											/>
+										</FormControl>
+										<FormDescription>
+											Maximum response length (100-16,000).
+										</FormDescription>
+										<FormMessage />
+									</FormItem>
+								)}
 							/>
 						</div>
-
-						{/* Agent ID - copiable only */}
-						<div className="flex items-center justify-between border-b px-4 py-4">
-							<div className="flex flex-col gap-1">
-								<span className="font-medium text-sm">Agent ID</span>
-								<span className="text-muted-foreground text-xs">
-									Unique identifier for API integrations
-								</span>
-							</div>
-							<div className="flex items-center gap-2">
-								<code className="rounded bg-background-200 px-2 py-0.5 font-mono text-xs dark:bg-background-300">
-									{initialData.id}
-								</code>
-								<TooltipOnHover content="Copy agent ID">
-									<Button
-										onClick={handleCopyAgentId}
-										size="icon-small"
-										type="button"
-										variant="secondary"
-									>
-										<Icon
-											className="size-3.5"
-											filledOnHover
-											name={hasCopied ? "check" : "clipboard"}
-										/>
-									</Button>
-								</TooltipOnHover>
-							</div>
-						</div>
-					</>
-				)}
-
-				<div className="space-y-6 px-4 py-6">
-					<FormField
-						control={form.control}
-						name="name"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Name</FormLabel>
-								<FormControl>
-									<Input
-										placeholder={`${websiteName} AI`}
-										{...field}
-										disabled={isSubmitting}
-									/>
-								</FormControl>
-								<FormDescription>
-									A friendly name for your AI agent.
-								</FormDescription>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={form.control}
-						name="imageMode"
-						render={({ field }) => (
-							<FormItem className="flex flex-col gap-3">
-								<FormLabel>Profile Picture</FormLabel>
-								<FormControl>
-									<RadioGroup
-										className="space-y-3"
-										disabled={isSubmitting}
-										onValueChange={field.onChange}
-										value={field.value}
-									>
-										<div className="flex items-start space-x-3">
-											<RadioGroupItem
-												className="mt-1"
-												id="agent-image-mode-default"
-												value="default"
-											/>
-											<div className="space-y-0.5">
-												<Label
-													className="cursor-pointer font-normal"
-													htmlFor="agent-image-mode-default"
-												>
-													Use Cossistant logo
-												</Label>
-												<p className="text-muted-foreground text-sm">
-													Show the default Cossistant profile picture.
-												</p>
-											</div>
-										</div>
-
-										<div className="flex items-start space-x-3">
-											<RadioGroupItem
-												className="mt-1"
-												id="agent-image-mode-custom"
-												value="custom"
-											/>
-											<div className="space-y-0.5">
-												<Label
-													className="cursor-pointer font-normal"
-													htmlFor="agent-image-mode-custom"
-												>
-													Upload custom image
-												</Label>
-												<p className="text-muted-foreground text-sm">
-													Use your own avatar or brand mark for the AI agent.
-												</p>
-											</div>
-										</div>
-									</RadioGroup>
-								</FormControl>
-								<FormDescription>
-									Choose which profile picture visitors and teammates will see
-									for this AI agent.
-								</FormDescription>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					{imageModeValue === "custom" && (
-						<FormField
-							control={form.control}
-							name="image"
-							render={({ field }) => (
-								<FormItem className="flex flex-col gap-2">
-									<FormControl>
-										<AvatarInput
-											accept={AGENT_IMAGE_ACCEPT}
-											allowSvgUploads
-											disabled={isSubmitting}
-											name={field.name}
-											onBlur={field.onBlur}
-											onChange={(value) => {
-												field.onChange(value);
-												void form.trigger("image");
-											}}
-											onError={(error) => {
-												if (
-													!(
-														error as Error & {
-															handledByToast?: boolean;
-														}
-													)?.handledByToast
-												) {
-													toast.error(error.message);
-												}
-												setIsUploadingImage(false);
-											}}
-											onUpload={handleImageUpload}
-											onUploadComplete={() => setIsUploadingImage(false)}
-											onUploadStart={() => setIsUploadingImage(true)}
-											placeholder="Upload a square image at least 256×256px. SVG uploads are allowed."
-											ref={field.ref}
-											uploadLabel="Upload image"
-											value={field.value}
-										/>
-									</FormControl>
-									<FormDescription>
-										We&apos;ll use this image everywhere the AI agent appears in
-										the dashboard and support widget.
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					)}
-
-					<FormField
-						control={form.control}
-						name="description"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Description (optional)</FormLabel>
-								<FormControl>
-									<Input
-										placeholder="Helps users with common support questions"
-										{...field}
-										disabled={isSubmitting}
-									/>
-								</FormControl>
-								<FormDescription>
-									A brief description of what this agent does.
-								</FormDescription>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={form.control}
-						name="model"
-						render={({ field }) => (
-							<FormItem>
-								<ModelSelect
-									description="The AI model to use for generating responses."
-									disabled={isSubmitting}
-									label="Model"
-									onChange={field.onChange}
-									planInfo={planInfo}
-									value={field.value}
-									websiteSlug={websiteSlug}
-								/>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-
-					<FormField
-						control={form.control}
-						name="basePrompt"
-						render={({ field, fieldState }) => (
-							<FormItem>
-								<PromptInputWithMentions
-									description="The system prompt that defines how your AI agent behaves."
-									disabled={isSubmitting}
-									error={fieldState.error?.message}
-									label="Base Prompt"
-									maxLength={10_000}
-									onChange={field.onChange}
-									placeholder="You are a helpful support assistant..."
-									rows={10}
-									toolMentions={toolMentionOptions}
-									value={field.value}
-								/>
-							</FormItem>
-						)}
-					/>
-
-					<div className="grid grid-cols-2 gap-4">
-						<FormField
-							control={form.control}
-							name="temperature"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Temperature</FormLabel>
-									<FormControl>
-										<Input
-											disabled={isSubmitting}
-											max={2}
-											min={0}
-											placeholder="0.7"
-											step={0.1}
-											type="number"
-											{...field}
-											onChange={(e) =>
-												field.onChange(
-													e.target.value === ""
-														? undefined
-														: Number.parseFloat(e.target.value)
-												)
-											}
-											value={field.value ?? ""}
-										/>
-									</FormControl>
-									<FormDescription>
-										Controls randomness (0 = focused, 2 = creative).
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<FormField
-							control={form.control}
-							name="maxOutputTokens"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Max Tokens</FormLabel>
-									<FormControl>
-										<Input
-											disabled={isSubmitting}
-											max={16_000}
-											min={100}
-											placeholder="1024"
-											step={100}
-											type="number"
-											{...field}
-											onChange={(e) =>
-												field.onChange(
-													e.target.value === ""
-														? undefined
-														: Number.parseInt(e.target.value, 10)
-												)
-											}
-											value={field.value ?? ""}
-										/>
-									</FormControl>
-									<FormDescription>
-										Maximum response length (100-16,000).
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
 					</div>
-				</div>
 
-				<SettingsRowFooter className="flex items-center justify-between gap-2">
-					{isEditing && initialData && (
-						<div className="text-muted-foreground text-xs">
-							Used {initialData.usageCount} times
-							{initialData.lastUsedAt && (
-								<>
-									{" "}
-									&middot; Last used{" "}
-									{new Date(initialData.lastUsedAt).toLocaleDateString()}
-								</>
-							)}
+					<SettingsRowFooter className="flex items-center justify-between gap-2">
+						{isEditing && initialData && (
+							<div className="text-muted-foreground text-xs">
+								Used {initialData.usageCount} times
+								{initialData.lastUsedAt && (
+									<>
+										{" "}
+										&middot; Last used{" "}
+										{new Date(initialData.lastUsedAt).toLocaleDateString()}
+									</>
+								)}
+							</div>
+						)}
+						<div className="flex flex-1 items-center justify-end gap-2">
+							<BaseSubmitButton
+								className="w-auto"
+								disabled={
+									isEditing
+										? !(hasChanges && form.formState.isValid) || isSubmitting
+										: isSubmitting || !form.formState.isValid
+								}
+								isSubmitting={isSubmitting}
+							>
+								{isEditing ? "Save changes" : "Create agent"}
+							</BaseSubmitButton>
 						</div>
-					)}
-					<div className="flex flex-1 items-center justify-end gap-2">
-						<BaseSubmitButton
-							className="w-auto"
-							disabled={
-								isEditing
-									? !(hasChanges && form.formState.isValid) || isSubmitting
-									: isSubmitting || !form.formState.isValid
-							}
-							isSubmitting={isSubmitting}
-						>
-							{isEditing ? "Save changes" : "Create agent"}
-						</BaseSubmitButton>
-					</div>
-				</SettingsRowFooter>
-			</form>
-		</Form>
+					</SettingsRowFooter>
+				</form>
+			</Form>
+
+			{canOpenUpgradeModal && planInfo ? (
+				<UpgradeModal
+					currentPlan={planInfo.plan}
+					highlightedFeatureKey="custom-ai-agent-avatar"
+					initialPlanName="pro"
+					onOpenChange={setIsUpgradeModalOpen}
+					open={isUpgradeModalOpen}
+					websiteSlug={websiteSlug}
+				/>
+			) : null}
+		</>
 	);
 }
